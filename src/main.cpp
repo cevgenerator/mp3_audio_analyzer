@@ -44,7 +44,7 @@ int main() {
   }
 
   // Open the MP3 file.
-  if (mpg123_open(decoder, "assets/gradient_deep_performance_edit.mp3") !=
+  if (mpg123_open(decoder, "../assets/gradient_deep_performance_edit.mp3") !=
       MPG123_OK) {
     std::cerr << "Failed to open file.\n";
 
