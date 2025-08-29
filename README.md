@@ -1,5 +1,8 @@
 # MP3 Audio Analyzer (C++)
 
+**Language:** C++  
+**Version:** `v0.1.0`
+
 A real-time MP3 audio analyzer (in development) using [mpg123](https://www.mpg123.de/) and [PortAudio](http://www.portaudio.com/).
 
 Currently, the project plays back MP3 files while decoding them to raw PCM audio. Future versions will analyze the audio data in real-time and output the results (e.g., for audio-reactive graphics).
@@ -17,47 +20,47 @@ Currently, the project plays back MP3 files while decoding them to raw PCM audio
 
 ---
 
-## Build Instructions
+## Build Instructions (CMake)
 
-Make sure you have the development libraries installed:
+Make sure you have the required development tools:
 
 ```bash
 sudo apt update
-sudo apt install libmpg123-dev portaudio19-dev build-essential
+sudo apt install cmake libmpg123-dev portaudio19-dev build-essential
 ```
 
-Then from the project root, run:
+Then from the project root:
 
 ```bash
 mkdir -p build
-g++ src/main.cpp -lmpg123 -lportaudio -o build/mp3_analyzer
+cd build
+cmake ..
+cmake --build .
 ```
 
----
-
-## Usage
+This will produce the executable:
 
 ```bash
-build/mp3_analyzer
+./mp3_analyzer
 ```
-
-Make sure the MP3 file is located at:
-
-```bash
-assets/gradient_deep_performance_edit.mp3
-```
-
-You can adjust the file path inside main.cpp if needed.
 
 ---
 
 ## Dependencies
 
+- CMake ≥ 3.10 (build system)
 - libmpg123 for MP3 decoding
 - PortAudio for audio playback
-- C++ compiler (e.g., g++)
+- C++17-compatible compiler (e.g., g++, clang++)
+- Tested on Linux (Pop!_OS); Windows/macOS support planned
 
-Currently tested on Linux (Pop!_OS).
+---
+
+## Development Tools
+- clang-tidy for static code analysis
+- clang-format for consistent formatting
+
+These tools are used during development to help maintain code quality and consistency.
 
 ---
 
@@ -67,11 +70,15 @@ Currently tested on Linux (Pop!_OS).
 project-root/
 │
 ├── assets/
+├── cmake/
 ├── src/
 ├── third_party_licenses/
+├── CHANGELOG.md
+├── CMakeLists.txt
 ├── LICENSE
 ├── README.md
 ├── .clang-format
+├── .clang-tidy
 └── .gitignore
 ```
 
@@ -85,7 +92,7 @@ project-root/
 - [ ] Add FFTW 
 - [ ] Add real-time audio analysis
 - [ ] Add 60 fps update/print loop for analysis
-- [ ] Add CMake support
+- [x] Add CMake support
 - [ ] Add cross-platform compatibility (Windows/macOS)
 
 ---
