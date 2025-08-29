@@ -86,6 +86,8 @@ project-root/
 
 ## To Do
 
+- [ ] Fix audio glitches
+- [ ] Investigate buffer underruns or latency issues
 - [ ] Refactor cleanup logic
 - [ ] Refactor error handling into reusable functions
 - [ ] Refactor audio logic into functions (e.g., InitMp3(), InitPortAudio())
