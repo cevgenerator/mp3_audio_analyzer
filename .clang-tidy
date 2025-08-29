@@ -1,0 +1,11 @@
+Checks: >
+  clang-analyzer-*,performance-*,modernize-*,
+  bugprone-*,readability-*
+
+WarningsAsErrors: ''
+HeaderFilterRegex: 'src/.*'
+FormatStyle: file
+CheckOptions:
+  - key:             modernize-use-nullptr.NullMacros
+    value:           'NULL'
+
