@@ -34,11 +34,11 @@ int main() {
   // Create a new mpg123 handle.
   int mpg123_error;
 
-  mpg123_handle* decoder = mpg123_new(NULL, &mpg123_error);
+  mpg123_handle* decoder = mpg123_new(nullptr, &mpg123_error);
 
   // Check if decoder was created successfully.
-  if (decoder == NULL) {
-    std::cerr << "decoder = NULL\n";
+  if (decoder == nullptr) {
+    std::cerr << "Failed to create decoder.\n";
 
     return 1;
   }
@@ -56,7 +56,8 @@ int main() {
 
   // Get the format data needed to set the output format.
   long sample_rate;
-  int channels, encoding_format;
+  int channels;
+  int encoding_format;
 
   mpg123_getformat(decoder, &sample_rate, &channels, &encoding_format);
 
@@ -141,6 +142,9 @@ int main() {
   }
 
   // Check if the audio format is supported by the default output device.
+  //
+  // Safe conversion of sample_rate: MP3 sample rates are well below precision
+  // limits of double
   if (Pa_IsFormatSupported(nullptr, &output_parameters, sample_rate) !=
       paFormatIsSupported) {
     std::cerr
@@ -161,6 +165,9 @@ int main() {
   // ---------------------------
 
   // Open the audio stream.
+  //
+  // Safe conversion of sample_rate: MP3 sample rates are well below precision
+  // limits of double
   portaudio_error =
       Pa_OpenStream(&audio_stream,
                     nullptr,  // No input.
@@ -233,7 +240,7 @@ int main() {
   // bytes_read bytes of PCM data.
   while ((mpg123_error = mpg123_read(decoder, buffer, buffer_size,
                                      &bytes_read)) == MPG123_OK) {
-    int frames = bytes_read / frame_size;
+    size_t frames = bytes_read / frame_size;
 
     portaudio_error = Pa_WriteStream(audio_stream, buffer, frames);
 
