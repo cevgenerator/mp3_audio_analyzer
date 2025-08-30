@@ -234,7 +234,7 @@ int main() {
   // bytes_read bytes of PCM data.
   while ((mpg123_error = mpg123_read(decoder, buffer, buffer_size,
                                      &bytes_read)) == MPG123_OK) {
-    int frames = bytes_read / frame_size;
+    size_t frames = bytes_read / frame_size;
 
     portaudio_error = Pa_WriteStream(audio_stream, buffer, frames);
 
