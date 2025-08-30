@@ -38,7 +38,7 @@ int main() {
 
   // Check if decoder was created successfully.
   if (decoder == nullptr) {
-    std::cerr << "decoder = nullptr\n";
+    std::cerr << "Failed to create decoder.\n";
 
     return 1;
   }
