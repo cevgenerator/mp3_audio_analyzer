@@ -142,6 +142,9 @@ int main() {
   }
 
   // Check if the audio format is supported by the default output device.
+  //
+  // Safe conversion of sample_rate: MP3 sample rates are well below precision
+  // limits of double
   if (Pa_IsFormatSupported(nullptr, &output_parameters, sample_rate) !=
       paFormatIsSupported) {
     std::cerr
@@ -162,6 +165,9 @@ int main() {
   // ---------------------------
 
   // Open the audio stream.
+  //
+  // Safe conversion of sample_rate: MP3 sample rates are well below precision
+  // limits of double
   portaudio_error =
       Pa_OpenStream(&audio_stream,
                     nullptr,  // No input.
