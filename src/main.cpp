@@ -56,7 +56,8 @@ int main() {
 
   // Get the format data needed to set the output format.
   long sample_rate;
-  int channels, encoding_format;
+  int channels;
+  int encoding_format;
 
   mpg123_getformat(decoder, &sample_rate, &channels, &encoding_format);
 
