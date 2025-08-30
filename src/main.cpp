@@ -34,11 +34,11 @@ int main() {
   // Create a new mpg123 handle.
   int mpg123_error;
 
-  mpg123_handle* decoder = mpg123_new(NULL, &mpg123_error);
+  mpg123_handle* decoder = mpg123_new(nullptr, &mpg123_error);
 
   // Check if decoder was created successfully.
-  if (decoder == NULL) {
-    std::cerr << "decoder = NULL\n";
+  if (decoder == nullptr) {
+    std::cerr << "decoder = nullptr\n";
 
     return 1;
   }
