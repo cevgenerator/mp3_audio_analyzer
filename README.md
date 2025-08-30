@@ -1,4 +1,4 @@
-# MP3 Audio Analyzer (C++)
+# MP3 Audio Analyzer
 
 **Language:** C++  
 **Version:** `v0.1.0`
