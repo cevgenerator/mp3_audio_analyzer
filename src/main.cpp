@@ -10,7 +10,7 @@
 #include <iostream>
 #include <vector>
 
-// Mpg123Decoder is a RAII wrapper around mpg123_handle*
+// Mpg123Decoder is an RAII wrapper around mpg123_handle*
 // that manages decoder creation and cleanup automatically.
 class Mpg123Decoder {
  public:
@@ -29,6 +29,31 @@ class Mpg123Decoder {
  private:
   int error_ = MPG123_OK;
   mpg123_handle* handle_ = nullptr;
+};
+
+// PortAudioSystem is an RAII wrapper around Pa_Initialize()
+// that manages audio system initialization and cleanup.
+class PortAudioSystem {
+ public:
+  PortAudioSystem() {
+    error_ = Pa_Initialize();
+
+    if (error_ == paNoError) {
+      initialized_ = true;
+    }
+  }
+
+  ~PortAudioSystem() {
+    if (initialized_) {
+      Pa_Terminate();
+    }
+  }
+
+  int error() const { return error_; }
+
+ private:
+  int error_ = paNoError;
+  bool initialized_ = false;
 };
 
 // Converts an mpg123 encoding format to a compatible PortAudio sample format.
@@ -93,7 +118,8 @@ int main() {
   // ---------------------------
 
   // Initialize PortAudio library.
-  int portaudio_error = Pa_Initialize();
+  PortAudioSystem audio_system;
+  int portaudio_error = audio_system.error();
 
   if (portaudio_error == paNoError) {
     std::cout << "Portaudio initialized successfully.\n";
@@ -114,9 +140,6 @@ int main() {
   if (output_parameters.device == paNoDevice) {
     std::cerr << "No default output device.\n";
 
-    // Clean up.
-    Pa_Terminate();
-
     return 1;
   }
 
@@ -131,9 +154,6 @@ int main() {
   if (output_parameters.sampleFormat == 0) {
     std::cerr << "Unsupported sample format for PortAudio.\n";
 
-    // Clean up.
-    Pa_Terminate();
-
     return 1;
   }
 
@@ -145,9 +165,6 @@ int main() {
       paFormatIsSupported) {
     std::cerr
         << "The audio format is not supported by the default output device.\n";
-
-    // Clean up.
-    Pa_Terminate();
 
     return 1;
   }
@@ -173,9 +190,6 @@ int main() {
     std::cerr << "Failed to open PortAudio stream: "
               << Pa_GetErrorText(portaudio_error) << "\n";
 
-    // Clean up.
-    Pa_Terminate();
-
     return 1;
   }
 
@@ -187,7 +201,6 @@ int main() {
 
     // Clean up.
     Pa_CloseStream(audio_stream);
-    Pa_Terminate();
 
     return 1;
   }
@@ -207,7 +220,6 @@ int main() {
     // Clean up.
     Pa_StopStream(audio_stream);
     Pa_CloseStream(audio_stream);
-    Pa_Terminate();
 
     return 1;
   }
@@ -241,7 +253,6 @@ int main() {
     // Clean up.
     Pa_StopStream(audio_stream);
     Pa_CloseStream(audio_stream);
-    Pa_Terminate();
 
     return 1;
   }
@@ -252,7 +263,6 @@ int main() {
 
   Pa_StopStream(audio_stream);
   Pa_CloseStream(audio_stream);
-  Pa_Terminate();
 
   return 0;
 }
