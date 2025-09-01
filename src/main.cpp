@@ -8,6 +8,7 @@
 #include <portaudio.h>
 
 #include <iostream>
+#include <vector>
 
 // Converts an mpg123 encoding format to a compatible PortAudio sample format.
 // The input is the encoding value returned by mpg123_getformat().
@@ -62,22 +63,10 @@ int main() {
   mpg123_getformat(decoder, &sample_rate, &channels, &encoding_format);
 
   // Allocate a buffer.
-  unsigned char* buffer;
   size_t buffer_size;
 
   buffer_size = mpg123_outblock(decoder);  // Get the recommended buffer size.
-  buffer =
-      static_cast<unsigned char*>(malloc(buffer_size * sizeof(unsigned char)));
-
-  if (buffer == nullptr) {
-    std::cerr << "Failed to allocate buffer.\n";
-
-    // Clean up.
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
-
-    return 1;
-  }
+  std::vector<unsigned char> buffer(buffer_size);
 
   // ---------------------------
   // Configure and open output stream
@@ -94,7 +83,6 @@ int main() {
               << " (code : " << portaudio_error << ")\n";
 
     // Clean up.
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -113,7 +101,6 @@ int main() {
     // Clean up.
     Pa_Terminate();
 
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -134,7 +121,6 @@ int main() {
     // Clean up.
     Pa_Terminate();
 
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -153,7 +139,6 @@ int main() {
     // Clean up.
     Pa_Terminate();
 
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -184,7 +169,6 @@ int main() {
     // Clean up.
     Pa_Terminate();
 
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -201,7 +185,6 @@ int main() {
     Pa_CloseStream(audio_stream);
     Pa_Terminate();
 
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -225,7 +208,6 @@ int main() {
     Pa_CloseStream(audio_stream);
     Pa_Terminate();
 
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -238,11 +220,11 @@ int main() {
   //
   // This loop runs until the MP3 is fully decoded. The buffer contains
   // bytes_read bytes of PCM data.
-  while ((mpg123_error = mpg123_read(decoder, buffer, buffer_size,
+  while ((mpg123_error = mpg123_read(decoder, buffer.data(), buffer_size,
                                      &bytes_read)) == MPG123_OK) {
     size_t frames = bytes_read / frame_size;
 
-    portaudio_error = Pa_WriteStream(audio_stream, buffer, frames);
+    portaudio_error = Pa_WriteStream(audio_stream, buffer.data(), frames);
 
     if (portaudio_error != paNoError) {
       std::cerr << "PortAudio write error: " << Pa_GetErrorText(portaudio_error)
@@ -263,7 +245,6 @@ int main() {
     Pa_CloseStream(audio_stream);
     Pa_Terminate();
 
-    free(buffer);
     mpg123_close(decoder);
     mpg123_delete(decoder);
 
@@ -278,7 +259,6 @@ int main() {
   Pa_CloseStream(audio_stream);
   Pa_Terminate();
 
-  free(buffer);
   mpg123_close(decoder);
   mpg123_delete(decoder);
 
