@@ -10,6 +10,27 @@
 #include <iostream>
 #include <vector>
 
+// Mpg123Decoder is a RAII wrapper around mpg123_handle*
+// that manages decoder creation and cleanup automatically.
+class Mpg123Decoder {
+ public:
+  Mpg123Decoder() { handle_ = mpg123_new(nullptr, &error_); }
+
+  ~Mpg123Decoder() {
+    if (handle_ != nullptr) {
+      mpg123_close(handle_);  // Closes the stream if it was opened.
+      mpg123_delete(handle_);
+    }
+  }
+
+  mpg123_handle* handle() const { return handle_; }
+  int error() const { return error_; }
+
+ private:
+  int error_ = MPG123_OK;
+  mpg123_handle* handle_ = nullptr;
+};
+
 // Converts an mpg123 encoding format to a compatible PortAudio sample format.
 // The input is the encoding value returned by mpg123_getformat().
 PaSampleFormat GetPortAudioFormat(int mpg123_encoding) {
@@ -34,23 +55,22 @@ int main() {
 
   // Create a new mpg123 handle.
   int mpg123_error;
+  Mpg123Decoder decoder;
 
-  mpg123_handle* decoder = mpg123_new(nullptr, &mpg123_error);
+  auto* handle = decoder.handle();
 
-  // Check if decoder was created successfully.
-  if (decoder == nullptr) {
-    std::cerr << "Failed to create decoder.\n";
+  // Check if handle was created successfully.
+  if (handle == nullptr) {
+    std::cerr << "Failed to create handle. Error: "
+              << mpg123_plain_strerror(decoder.error()) << "\n";
 
     return 1;
   }
 
   // Open the MP3 file.
-  if (mpg123_open(decoder, "../assets/gradient_deep_performance_edit.mp3") !=
+  if (mpg123_open(handle, "../assets/gradient_deep_performance_edit.mp3") !=
       MPG123_OK) {
     std::cerr << "Failed to open file.\n";
-
-    // Clean up.
-    mpg123_delete(decoder);
 
     return 1;
   }
@@ -60,12 +80,12 @@ int main() {
   int channels;
   int encoding_format;
 
-  mpg123_getformat(decoder, &sample_rate, &channels, &encoding_format);
+  mpg123_getformat(handle, &sample_rate, &channels, &encoding_format);
 
   // Allocate a buffer.
   size_t buffer_size;
 
-  buffer_size = mpg123_outblock(decoder);  // Get the recommended buffer size.
+  buffer_size = mpg123_outblock(handle);  // Get the recommended buffer size.
   std::vector<unsigned char> buffer(buffer_size);
 
   // ---------------------------
@@ -82,10 +102,6 @@ int main() {
               << Pa_GetErrorText(portaudio_error)
               << " (code : " << portaudio_error << ")\n";
 
-    // Clean up.
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
-
     return 1;
   };
 
@@ -100,9 +116,6 @@ int main() {
 
     // Clean up.
     Pa_Terminate();
-
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
 
     return 1;
   }
@@ -121,9 +134,6 @@ int main() {
     // Clean up.
     Pa_Terminate();
 
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
-
     return 1;
   }
 
@@ -138,9 +148,6 @@ int main() {
 
     // Clean up.
     Pa_Terminate();
-
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
 
     return 1;
   }
@@ -169,9 +176,6 @@ int main() {
     // Clean up.
     Pa_Terminate();
 
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
-
     return 1;
   }
 
@@ -184,9 +188,6 @@ int main() {
     // Clean up.
     Pa_CloseStream(audio_stream);
     Pa_Terminate();
-
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
 
     return 1;
   }
@@ -208,9 +209,6 @@ int main() {
     Pa_CloseStream(audio_stream);
     Pa_Terminate();
 
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
-
     return 1;
   }
 
@@ -220,7 +218,7 @@ int main() {
   //
   // This loop runs until the MP3 is fully decoded. The buffer contains
   // bytes_read bytes of PCM data.
-  while ((mpg123_error = mpg123_read(decoder, buffer.data(), buffer_size,
+  while ((mpg123_error = mpg123_read(handle, buffer.data(), buffer_size,
                                      &bytes_read)) == MPG123_OK) {
     size_t frames = bytes_read / frame_size;
 
@@ -237,16 +235,13 @@ int main() {
   if (mpg123_error == MPG123_DONE) {
     std::cout << "Finished decoding successfully.\n";
   } else if (mpg123_error != MPG123_OK) {
-    std::cerr << "Decoding failed. Error: " << mpg123_strerror(decoder)
+    std::cerr << "Decoding failed. Error: " << mpg123_strerror(handle)
               << " (code " << mpg123_error << ")\n";
 
     // Clean up.
     Pa_StopStream(audio_stream);
     Pa_CloseStream(audio_stream);
     Pa_Terminate();
-
-    mpg123_close(decoder);
-    mpg123_delete(decoder);
 
     return 1;
   }
@@ -258,9 +253,6 @@ int main() {
   Pa_StopStream(audio_stream);
   Pa_CloseStream(audio_stream);
   Pa_Terminate();
-
-  mpg123_close(decoder);
-  mpg123_delete(decoder);
 
   return 0;
 }
