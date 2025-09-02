@@ -120,10 +120,10 @@ int main() {
   int mpg123_error;
   Mpg123Decoder decoder;
 
-  auto* handle = decoder.handle();
+  auto* decoder_handle = decoder.handle();
 
   // Check if handle was created successfully.
-  if (handle == nullptr) {
+  if (decoder_handle == nullptr) {
     std::cerr << "Failed to create handle. Error: "
               << mpg123_plain_strerror(decoder.error()) << "\n";
 
@@ -131,7 +131,8 @@ int main() {
   }
 
   // Open the MP3 file.
-  if (mpg123_open(handle, "../assets/gradient_deep_performance_edit.mp3") !=
+  if (mpg123_open(decoder_handle,
+                  "../assets/gradient_deep_performance_edit.mp3") !=
       MPG123_OK) {
     std::cerr << "Failed to open file.\n";
 
@@ -143,12 +144,13 @@ int main() {
   int channels;
   int encoding_format;
 
-  mpg123_getformat(handle, &sample_rate, &channels, &encoding_format);
+  mpg123_getformat(decoder_handle, &sample_rate, &channels, &encoding_format);
 
   // Allocate a buffer.
   size_t buffer_size;
 
-  buffer_size = mpg123_outblock(handle);  // Get the recommended buffer size.
+  buffer_size =
+      mpg123_outblock(decoder_handle);  // Get the recommended buffer size.
   std::vector<unsigned char> buffer(buffer_size);
 
   // ---------------------------
@@ -250,7 +252,7 @@ int main() {
   //
   // This loop runs until the MP3 is fully decoded. The buffer contains
   // bytes_read bytes of PCM data.
-  while ((mpg123_error = mpg123_read(handle, buffer.data(), buffer_size,
+  while ((mpg123_error = mpg123_read(decoder_handle, buffer.data(), buffer_size,
                                      &bytes_read)) == MPG123_OK) {
     size_t frames = bytes_read / frame_size;
 
@@ -268,7 +270,7 @@ int main() {
   if (mpg123_error == MPG123_DONE) {
     std::cout << "Finished decoding successfully.\n";
   } else if (mpg123_error != MPG123_OK) {
-    std::cerr << "Decoding failed. Error: " << mpg123_strerror(handle)
+    std::cerr << "Decoding failed. Error: " << mpg123_strerror(decoder_handle)
               << " (code " << mpg123_error << ")\n";
 
     return 1;
