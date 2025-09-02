@@ -56,12 +56,15 @@ class PortAudioSystem {
   bool initialized_ = false;
 };
 
+// AudioStream is an RAII wrapper class around Pa_OpenStream()
+// that manages audio stream opening and cleanup.
 class AudioStream {
  public:
   AudioStream(PaStreamParameters output_parameters, long sample_rate) {
     // Open the audio stream.
+    //
     // Safe conversion of sample_rate: MP3 sample rates are well below precision
-    // limits of double
+    // limits of double.
     error_ =
         Pa_OpenStream(&stream_,
                       nullptr,  // No input.
@@ -91,6 +94,7 @@ class AudioStream {
 };
 
 // Converts an mpg123 encoding format to a compatible PortAudio sample format.
+//
 // The input is the encoding value returned by mpg123_getformat().
 PaSampleFormat GetPortAudioFormat(int mpg123_encoding) {
   switch (mpg123_encoding) {
@@ -193,7 +197,7 @@ int main() {
   // Check if the audio format is supported by the default output device.
   //
   // Safe conversion of sample_rate: MP3 sample rates are well below precision
-  // limits of double
+  // limits of double.
   if (Pa_IsFormatSupported(nullptr, &output_parameters, sample_rate) !=
       paFormatIsSupported) {
     std::cerr
