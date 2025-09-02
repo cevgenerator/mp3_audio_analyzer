@@ -88,9 +88,9 @@ project-root/
 
 - [ ] Fix audio glitches
 - [ ] Investigate buffer underruns or latency issues
-- [ ] Refactor cleanup logic
+- [x] Refactor cleanup logic
 - [ ] Refactor error handling into reusable functions
-- [ ] Refactor audio logic into functions (e.g., InitMp3(), InitPortAudio())
+- [ ] Refactor audio logic into member functions
 - [ ] Add FFTW 
 - [ ] Add real-time audio analysis
 - [ ] Add 60 fps update/print loop for analysis
