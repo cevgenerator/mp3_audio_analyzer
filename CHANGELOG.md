@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2025-09-02
+### Refactor
+- Centralized cleanup logic to reduce repetition and improve safety
+- Introduced RAII wrappers for `mpg123_new()`, `Pa_Initialize()` and `Pa_OpenStream()`
+- Refactored buffer allocation to use std::vector for RAII
+
+### Style
+- Internal code cleanup for clarity and consistency
+
 ## [0.1.1] - 2025-08-30
 ### Refactor
 - Refactored code for consistency (changed `frames` type to `size_t`)
