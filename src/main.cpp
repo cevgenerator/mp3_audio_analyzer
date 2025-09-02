@@ -56,6 +56,40 @@ class PortAudioSystem {
   bool initialized_ = false;
 };
 
+class AudioStream {
+ public:
+  AudioStream(PaStreamParameters output_parameters, long sample_rate) {
+    // Open the audio stream.
+    // Safe conversion of sample_rate: MP3 sample rates are well below precision
+    // limits of double
+    error_ =
+        Pa_OpenStream(&stream_,
+                      nullptr,  // No input.
+                      &output_parameters, sample_rate,
+                      paFramesPerBufferUnspecified,  // Let PortAudio decide.
+                      paClipOff,                     // No clipping.
+                      nullptr,                       // No callback.
+                      nullptr);                      // No callback user data.
+  }
+
+  ~AudioStream() {
+    if (Pa_IsStreamActive(stream_) == 1) {
+      Pa_StopStream(stream_);
+    }
+
+    if (stream_ != nullptr) {
+      Pa_CloseStream(stream_);
+    }
+  }
+
+  PaStream* stream() const { return stream_; }
+  int error() const { return error_; }
+
+ private:
+  PaStream* stream_ = nullptr;
+  int error_ = paNoError;
+};
+
 // Converts an mpg123 encoding format to a compatible PortAudio sample format.
 // The input is the encoding value returned by mpg123_getformat().
 PaSampleFormat GetPortAudioFormat(int mpg123_encoding) {
@@ -132,7 +166,6 @@ int main() {
   };
 
   // Create a PortAudio output stream.
-  PaStream* audio_stream;
   PaStreamParameters output_parameters;
 
   output_parameters.device = Pa_GetDefaultOutputDevice();
@@ -173,18 +206,8 @@ int main() {
   // Open and start PortAudio stream
   // ---------------------------
 
-  // Open the audio stream.
-  //
-  // Safe conversion of sample_rate: MP3 sample rates are well below precision
-  // limits of double
-  portaudio_error =
-      Pa_OpenStream(&audio_stream,
-                    nullptr,  // No input.
-                    &output_parameters, sample_rate,
-                    paFramesPerBufferUnspecified,  // Let PortAudio decide.
-                    paClipOff,                     // No clipping.
-                    nullptr,                       // No callback.
-                    nullptr);                      // No callback user data.
+  AudioStream audio_stream = AudioStream(output_parameters, sample_rate);
+  portaudio_error = audio_stream.error();
 
   if (portaudio_error != paNoError) {
     std::cerr << "Failed to open PortAudio stream: "
@@ -194,13 +217,10 @@ int main() {
   }
 
   // Start the audio stream.
-  portaudio_error = Pa_StartStream(audio_stream);
+  portaudio_error = Pa_StartStream(audio_stream.stream());
   if (portaudio_error != paNoError) {
     std::cerr << "Failed to start PortAudio stream: "
               << Pa_GetErrorText(portaudio_error) << "\n";
-
-    // Clean up.
-    Pa_CloseStream(audio_stream);
 
     return 1;
   }
@@ -217,10 +237,6 @@ int main() {
   if (bytes_per_sample == 0) {
     std::cerr << "Unsupported encoding format.\n";
 
-    // Clean up.
-    Pa_StopStream(audio_stream);
-    Pa_CloseStream(audio_stream);
-
     return 1;
   }
 
@@ -234,7 +250,8 @@ int main() {
                                      &bytes_read)) == MPG123_OK) {
     size_t frames = bytes_read / frame_size;
 
-    portaudio_error = Pa_WriteStream(audio_stream, buffer.data(), frames);
+    portaudio_error =
+        Pa_WriteStream(audio_stream.stream(), buffer.data(), frames);
 
     if (portaudio_error != paNoError) {
       std::cerr << "PortAudio write error: " << Pa_GetErrorText(portaudio_error)
@@ -250,19 +267,8 @@ int main() {
     std::cerr << "Decoding failed. Error: " << mpg123_strerror(handle)
               << " (code " << mpg123_error << ")\n";
 
-    // Clean up.
-    Pa_StopStream(audio_stream);
-    Pa_CloseStream(audio_stream);
-
     return 1;
   }
-
-  // ---------------------------
-  // Clean up resources
-  // ---------------------------
-
-  Pa_StopStream(audio_stream);
-  Pa_CloseStream(audio_stream);
 
   return 0;
 }
