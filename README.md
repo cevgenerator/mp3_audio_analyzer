@@ -1,7 +1,7 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.1.2`
+**Version:** `v0.1.3`
 
 A real-time MP3 audio analyzer (in development) using [mpg123](https://www.mpg123.de/) and [PortAudio](http://www.portaudio.com/).
 
