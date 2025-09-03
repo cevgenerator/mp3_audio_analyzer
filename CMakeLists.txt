@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Project setup
-project(mp3_audio_analyzer VERSION 0.1.2 LANGUAGES CXX)
+project(mp3_audio_analyzer VERSION 0.1.3 LANGUAGES CXX)
 
 # C++17 standard required
 set(CMAKE_CXX_STANDARD 17)
@@ -29,6 +29,7 @@ find_package(PortAudio REQUIRED)
 # Source files
 set(SOURCES
     src/main.cpp
+    src/error_handling.cpp
 )
 
 # Build executable
@@ -46,5 +47,6 @@ target_include_directories(mp3_analyzer
   PRIVATE
     ${MPG123_INCLUDE_DIRS}
     ${PortAudio_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 

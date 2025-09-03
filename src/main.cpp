@@ -8,7 +8,14 @@
 #include <portaudio.h>
 
 #include <iostream>
+#include <string>
 #include <vector>
+
+#include "error_handling.h"
+
+// ---------------------------
+// Classes
+// ---------------------------
 
 // Mpg123Decoder is an RAII wrapper around mpg123_handle*
 // that manages decoder creation and cleanup automatically.
@@ -93,6 +100,10 @@ class AudioStream {
   int error_ = paNoError;
 };
 
+// ---------------------------
+// Functions
+// ---------------------------
+
 // Converts an mpg123 encoding format to a compatible PortAudio sample format.
 //
 // The input is the encoding value returned by mpg123_getformat().
@@ -116,26 +127,22 @@ int main() {
   // Setup mpg123 and configure decoder
   // ---------------------------
 
-  // Create a new mpg123 handle.
   int mpg123_error;
+
+  // Create a new mpg123 handle.
   Mpg123Decoder decoder;
 
   auto* decoder_handle = decoder.handle();
 
-  // Check if handle was created successfully.
-  if (decoder_handle == nullptr) {
-    std::cerr << "Failed to create handle. Error: "
-              << mpg123_plain_strerror(decoder.error()) << "\n";
-
+  if (!Succeeded("Creating handle", (decoder_handle == nullptr))) {
     return 1;
   }
 
   // Open the MP3 file.
-  if (mpg123_open(decoder_handle,
-                  "../assets/gradient_deep_performance_edit.mp3") !=
-      MPG123_OK) {
-    std::cerr << "Failed to open file.\n";
+  mpg123_error = mpg123_open(decoder_handle,
+                             "../assets/gradient_deep_performance_edit.mp3");
 
+  if (!Mpg123Succeeded("Opening file", mpg123_error)) {
     return 1;
   }
 
@@ -151,6 +158,7 @@ int main() {
 
   buffer_size =
       mpg123_outblock(decoder_handle);  // Get the recommended buffer size.
+
   std::vector<unsigned char> buffer(buffer_size);
 
   // ---------------------------
@@ -161,24 +169,17 @@ int main() {
   PortAudioSystem audio_system;
   int portaudio_error = audio_system.error();
 
-  if (portaudio_error == paNoError) {
-    std::cout << "Portaudio initialized successfully.\n";
-  } else {
-    std::cerr << "Initializing PortAudio failed. Error: "
-              << Pa_GetErrorText(portaudio_error)
-              << " (code : " << portaudio_error << ")\n";
-
+  if (!PortAudioSucceeded("Initializing PortAudio", portaudio_error)) {
     return 1;
-  };
+  }
 
   // Create a PortAudio output stream.
   PaStreamParameters output_parameters;
 
   output_parameters.device = Pa_GetDefaultOutputDevice();
 
-  if (output_parameters.device == paNoDevice) {
-    std::cerr << "No default output device.\n";
-
+  if (!Succeeded("Finding default output device",
+                 (output_parameters.device == paNoDevice))) {
     return 1;
   }
 
@@ -190,9 +191,9 @@ int main() {
   output_parameters.sampleFormat = GetPortAudioFormat(encoding_format);
 
   // Verify sample format compatibility between mpg123 and PortAudio.
-  if (output_parameters.sampleFormat == 0) {
-    std::cerr << "Unsupported sample format for PortAudio.\n";
-
+  if (!Succeeded(
+          "Verifying sample format comatibility between mpg123 and PortAudio",
+          (output_parameters.sampleFormat == 0))) {
     return 1;
   }
 
@@ -200,11 +201,11 @@ int main() {
   //
   // Safe conversion of sample_rate: MP3 sample rates are well below precision
   // limits of double.
-  if (Pa_IsFormatSupported(nullptr, &output_parameters, sample_rate) !=
-      paFormatIsSupported) {
-    std::cerr
-        << "The audio format is not supported by the default output device.\n";
+  portaudio_error =
+      Pa_IsFormatSupported(nullptr, &output_parameters, sample_rate);
 
+  if (!PortAudioSucceeded("Verifying audio format support by output device",
+                          portaudio_error)) {
     return 1;
   }
 
@@ -215,19 +216,14 @@ int main() {
   AudioStream audio_stream = AudioStream(output_parameters, sample_rate);
   portaudio_error = audio_stream.error();
 
-  if (portaudio_error != paNoError) {
-    std::cerr << "Failed to open PortAudio stream: "
-              << Pa_GetErrorText(portaudio_error) << "\n";
-
+  if (!PortAudioSucceeded("Opening PortAudio stream", portaudio_error)) {
     return 1;
   }
 
   // Start the audio stream.
   portaudio_error = Pa_StartStream(audio_stream.stream());
-  if (portaudio_error != paNoError) {
-    std::cerr << "Failed to start PortAudio stream: "
-              << Pa_GetErrorText(portaudio_error) << "\n";
 
+  if (!PortAudioSucceeded("Starting PortAudio stream", portaudio_error)) {
     return 1;
   }
 
@@ -240,9 +236,8 @@ int main() {
   // Get bytes per sample for the encoding format.
   const int bytes_per_sample = mpg123_encsize(encoding_format);
 
-  if (bytes_per_sample == 0) {
-    std::cerr << "Unsupported encoding format.\n";
-
+  if (!Succeeded("Determining number of bytes per sample",
+                 (bytes_per_sample == 0))) {
     return 1;
   }
 
@@ -259,20 +254,14 @@ int main() {
     portaudio_error =
         Pa_WriteStream(audio_stream.stream(), buffer.data(), frames);
 
-    if (portaudio_error != paNoError) {
-      std::cerr << "PortAudio write error: " << Pa_GetErrorText(portaudio_error)
-                << "\n";
+    if (!PortAudioSucceeded("Writing to output stream", portaudio_error)) {
       break;
     }
   }
 
   // Check the reason the loop exited.
-  if (mpg123_error == MPG123_DONE) {
-    std::cout << "Finished decoding successfully.\n";
-  } else if (mpg123_error != MPG123_OK) {
-    std::cerr << "Decoding failed. Error: " << mpg123_strerror(decoder_handle)
-              << " (code " << mpg123_error << ")\n";
-
+  if (mpg123_error != MPG123_DONE &&
+      !Mpg123Succeeded("Decoding", mpg123_error)) {
     return 1;
   }
 

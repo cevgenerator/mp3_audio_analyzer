@@ -1,7 +1,7 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.1.2`
+**Version:** `v0.1.3`
 
 A real-time MP3 audio analyzer (in development) using [mpg123](https://www.mpg123.de/) and [PortAudio](http://www.portaudio.com/).
 
@@ -14,9 +14,9 @@ Currently, the project plays back MP3 files while decoding them to raw PCM audio
 ## Features
 
 - Uses the `mpg123` library to decode MP3 files
-- Dynamically allocates buffers to store raw PCM data
+- Dynamically allocates a buffer to store raw PCM data
 - Uses the `portaudio` library to play PCM data as audio
-- Handles decoding errors and cleanly shuts down
+- Handles errors and cleanly shuts down
 
 ---
 
@@ -71,6 +71,7 @@ project-root/
 │
 ├── assets/
 ├── cmake/
+├── include/
 ├── src/
 ├── third_party_licenses/
 ├── CHANGELOG.md
@@ -89,7 +90,7 @@ project-root/
 - [ ] Fix audio glitches
 - [ ] Investigate buffer underruns or latency issues
 - [x] Refactor cleanup logic
-- [ ] Refactor error handling into reusable functions
+- [x] Refactor error handling into reusable functions
 - [ ] Refactor audio logic into member functions
 - [ ] Add FFTW 
 - [ ] Add real-time audio analysis
