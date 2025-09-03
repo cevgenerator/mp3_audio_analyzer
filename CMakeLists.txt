@@ -29,6 +29,7 @@ find_package(PortAudio REQUIRED)
 # Source files
 set(SOURCES
     src/main.cpp
+    src/error_handling.cpp
 )
 
 # Build executable
@@ -46,5 +47,6 @@ target_include_directories(mp3_analyzer
   PRIVATE
     ${MPG123_INCLUDE_DIRS}
     ${PortAudio_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 

@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "error_handling.h"
+
 // ---------------------------
 // Classes
 // ---------------------------
@@ -118,38 +120,6 @@ PaSampleFormat GetPortAudioFormat(int mpg123_encoding) {
     default:
       return 0;  // Unsupported format.
   }
-}
-
-// ---------------------------
-// Error handling
-// ---------------------------
-
-void LogError(const std::string& context, const std::string& message) {
-  std::cerr << "[Error] " << context << ": " << message << '\n';
-}
-
-bool Mpg123Succeeded(const std::string& context, int error) {
-  if (error != MPG123_OK) {
-    LogError(context, mpg123_plain_strerror(error));
-    return false;
-  }
-  return true;
-}
-
-bool PortAudioSucceeded(const std::string& context, PaError error) {
-  if (error != paNoError) {
-    LogError(context, Pa_GetErrorText(error));
-    return false;
-  }
-  return true;
-}
-
-bool Succeeded(const std::string& context, bool error) {
-  if (error) {
-    LogError(context, "Failed.");
-    return false;
-  }
-  return true;
 }
 
 int main() {
