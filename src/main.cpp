@@ -17,13 +17,13 @@
 // Classes
 // ---------------------------
 
-// Mpg123Decoder is an RAII wrapper around mpg123_handle*
+// Mpg123HandleWrapper is an RAII wrapper around mpg123_handle*
 // that manages decoder creation and cleanup automatically.
-class Mpg123Decoder {
+class Mpg123HandleWrapper {
  public:
-  Mpg123Decoder() { handle_ = mpg123_new(nullptr, &error_); }
+  Mpg123HandleWrapper() { handle_ = mpg123_new(nullptr, &error_); }
 
-  ~Mpg123Decoder() {
+  ~Mpg123HandleWrapper() {
     if (handle_ != nullptr) {
       mpg123_close(handle_);  // Closes the stream if it was opened.
       mpg123_delete(handle_);
@@ -130,9 +130,9 @@ int main() {
   int mpg123_error;
 
   // Create a new mpg123 handle.
-  Mpg123Decoder decoder;
+  Mpg123HandleWrapper handle_wrapper;
 
-  auto* decoder_handle = decoder.handle();
+  auto* decoder_handle = handle_wrapper.handle();
 
   if (!Succeeded("Creating handle", (decoder_handle == nullptr))) {
     return 1;
