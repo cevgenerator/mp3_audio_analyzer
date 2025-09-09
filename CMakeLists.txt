@@ -36,8 +36,9 @@ find_package(PortAudio REQUIRED)
 
 # Source files
 set(SOURCES
-    src/main.cpp
+    src/decoder.cpp
     src/error_handling.cpp
+    src/main.cpp
 )
 
 # Build executable
