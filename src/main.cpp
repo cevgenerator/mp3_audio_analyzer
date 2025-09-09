@@ -48,7 +48,7 @@ class Decoder {
 
   bool Initialize(const char* path) {
     return ValidateHandle() && OpenFile(path) && GetFormatData() &&
-           AllocateBuffer();
+           AllocateBuffer() && DetermineBytesPerSample();
   }
 
   bool Read(size_t& bytes_read) {
@@ -64,6 +64,7 @@ class Decoder {
   int channels() const { return channels_; }
   int encoding_format() const { return encoding_format_; }
   const unsigned char* buffer_data() const { return buffer_.data(); }
+  int bytes_per_sample() const { return bytes_per_sample_; }
 
  private:
   int mpg123_error_;
@@ -74,6 +75,7 @@ class Decoder {
   int encoding_format_;
   size_t buffer_size_ = 0;
   std::vector<unsigned char> buffer_;
+  int bytes_per_sample_ = 0;
 
   bool ValidateHandle() const {
     return Succeeded("Validating mpg123 handle", (handle_ == nullptr));
@@ -99,6 +101,13 @@ class Decoder {
     buffer_.resize(buffer_size_);
 
     return Succeeded("Allocating buffer", (buffer_size_ == 0));
+  }
+
+  bool DetermineBytesPerSample() {
+    bytes_per_sample_ = mpg123_encsize(encoding_format_);
+
+    return Succeeded("Determining number of bytes per sample",
+                     (bytes_per_sample_ == 0));
   }
 };
 
@@ -295,15 +304,7 @@ int main() {
 
   size_t bytes_read;
 
-  // Get bytes per sample for the encoding format.
-  const int bytes_per_sample = mpg123_encsize(decoder.encoding_format());
-
-  if (!Succeeded("Determining number of bytes per sample",
-                 (bytes_per_sample == 0))) {
-    return 1;
-  }
-
-  const int frame_size = decoder.channels() * bytes_per_sample;
+  const int frame_size = decoder.channels() * decoder.bytes_per_sample();
 
   // Decode the MP3 into PCM and write it to the output stream.
   //
