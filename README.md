@@ -46,6 +46,21 @@ This will produce the executable:
 
 ---
 
+## Build Options
+
+By default, the project builds in **Release mode** with optimizations (`-O2`).
+
+To build in **Debug mode** (with debug symbols and no optimizations), use:
+
+```bash
+mkdir -p build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake --build .
+```
+
+---
+
 ## Dependencies
 
 - CMake ≥ 3.10 (build system)
