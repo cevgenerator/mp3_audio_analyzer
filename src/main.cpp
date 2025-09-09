@@ -8,6 +8,7 @@
 #include <portaudio.h>
 
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -163,27 +164,109 @@ class AudioStream {
   int error_ = paNoError;
 };
 
-// ---------------------------
-// Functions
-// ---------------------------
+// AudioOutput is a wrapper around the PortAudio library that manages
+// initialization and configuration, as well as stream opening, starting and
+// writing.
+class AudioOutput {
+ public:
+  AudioOutput() { portaudio_error_ = audio_system_.error(); }
 
-// Converts an mpg123 encoding format to a compatible PortAudio sample format.
-//
-// The input is the encoding value returned by mpg123_getformat().
-PaSampleFormat GetPortAudioFormat(int mpg123_encoding) {
-  switch (mpg123_encoding) {
-    case MPG123_ENC_SIGNED_16:
-      return paInt16;
-    case MPG123_ENC_SIGNED_8:
-      return paInt8;
-    case MPG123_ENC_UNSIGNED_8:
-      return paUInt8;
-    case MPG123_ENC_FLOAT_32:
-      return paFloat32;
-    default:
-      return 0;  // Unsupported format.
+  bool Initialize(const Decoder& decoder) {
+    return ValidateAudioSystem() && FindDefaultOutputDevice() &&
+           ConfigureOutputParameters(decoder) && VerifyFormatSupport(decoder) &&
+           OpenStream(decoder) && StartStream();
   }
-}
+
+  bool WriteStream(const unsigned char* buffer, size_t frames) {
+    if (!audio_stream_) return false;
+
+    portaudio_error_ = Pa_WriteStream(audio_stream_->stream(), buffer, frames);
+
+    return PortAudioSucceeded("Writing to output stream", portaudio_error_);
+  }
+
+ private:
+  PortAudioSystem audio_system_;
+  int portaudio_error_;
+  PaStreamParameters output_parameters_;
+  std::optional<AudioStream> audio_stream_;
+
+  // Converts an mpg123 encoding format to a compatible PortAudio sample format.
+  //
+  // The input is the encoding value returned by mpg123_getformat().
+  static PaSampleFormat GetPortAudioFormat(int mpg123_encoding) {
+    switch (mpg123_encoding) {
+      case MPG123_ENC_SIGNED_16:
+        return paInt16;
+      case MPG123_ENC_SIGNED_8:
+        return paInt8;
+      case MPG123_ENC_UNSIGNED_8:
+        return paUInt8;
+      case MPG123_ENC_FLOAT_32:
+        return paFloat32;
+      default:
+        return 0;  // Unsupported format.
+    }
+  }
+
+  bool ValidateAudioSystem() const {
+    return PortAudioSucceeded("Validating PortAudio initialization",
+                              portaudio_error_);
+  }
+
+  bool FindDefaultOutputDevice() {
+    output_parameters_.device = Pa_GetDefaultOutputDevice();
+
+    return Succeeded("Finding default output device",
+                     (output_parameters_.device == paNoDevice));
+  }
+
+  bool ConfigureOutputParameters(const Decoder& decoder) {
+    output_parameters_.channelCount = decoder.channels();
+    output_parameters_.suggestedLatency =
+        Pa_GetDeviceInfo(output_parameters_.device)->defaultLowOutputLatency;
+    output_parameters_.hostApiSpecificStreamInfo = nullptr;
+    output_parameters_.sampleFormat =
+        GetPortAudioFormat(decoder.encoding_format());
+
+    return Succeeded(
+        "Verifying sample format compatibility between mpg123 and PortAudio",
+        (output_parameters_.sampleFormat == 0));
+  }
+
+  // Check if the audio format is supported by the default output device.
+  //
+  // Safe conversion of sample_rate_: MP3 sample rates are well below precision
+  // limits of double.
+  bool VerifyFormatSupport(const Decoder& decoder) {
+    portaudio_error_ = Pa_IsFormatSupported(nullptr, &output_parameters_,
+                                            decoder.sample_rate());
+
+    return PortAudioSucceeded("Verifying audio format support by output device",
+                              portaudio_error_);
+  }
+
+  bool OpenStream(const Decoder& decoder) {
+    audio_stream_.emplace(
+        output_parameters_,
+        decoder.sample_rate());  // Calls constructor in-place.
+
+    portaudio_error_ = audio_stream_->error();
+
+    return PortAudioSucceeded("Opening PortAudio stream", portaudio_error_);
+  }
+
+  bool StartStream() {
+    if (!Succeeded("Validating audio stream initialization",
+                   (!audio_stream_))) {
+      return false;
+    }
+
+    portaudio_error_ = Pa_StartStream(audio_stream_->stream());
+
+    return PortAudioSucceeded("Starting PortAudio stream", portaudio_error_);
+  }
+};
 
 int main() {
   // ---------------------------
@@ -200,67 +283,9 @@ int main() {
   // Configure and open output stream
   // ---------------------------
 
-  // Initialize PortAudio library.
-  PortAudioSystem audio_system;
-  int portaudio_error = audio_system.error();
+  AudioOutput audio_output;
 
-  if (!PortAudioSucceeded("Initializing PortAudio", portaudio_error)) {
-    return 1;
-  }
-
-  // Create a PortAudio output stream.
-  PaStreamParameters output_parameters;
-
-  output_parameters.device = Pa_GetDefaultOutputDevice();
-
-  if (!Succeeded("Finding default output device",
-                 (output_parameters.device == paNoDevice))) {
-    return 1;
-  }
-
-  // Configure output parameters based on MP3 format.
-  output_parameters.channelCount = decoder.channels();
-  output_parameters.suggestedLatency =
-      Pa_GetDeviceInfo(output_parameters.device)->defaultLowOutputLatency;
-  output_parameters.hostApiSpecificStreamInfo = nullptr;
-  output_parameters.sampleFormat =
-      GetPortAudioFormat(decoder.encoding_format());
-
-  // Verify sample format compatibility between mpg123 and PortAudio.
-  if (!Succeeded(
-          "Verifying sample format comatibility between mpg123 and PortAudio",
-          (output_parameters.sampleFormat == 0))) {
-    return 1;
-  }
-
-  // Check if the audio format is supported by the default output device.
-  //
-  // Safe conversion of sample_rate_: MP3 sample rates are well below precision
-  // limits of double.
-  portaudio_error =
-      Pa_IsFormatSupported(nullptr, &output_parameters, decoder.sample_rate());
-
-  if (!PortAudioSucceeded("Verifying audio format support by output device",
-                          portaudio_error)) {
-    return 1;
-  }
-
-  // ---------------------------
-  // Open and start PortAudio stream
-  // ---------------------------
-
-  AudioStream audio_stream =
-      AudioStream(output_parameters, decoder.sample_rate());
-  portaudio_error = audio_stream.error();
-
-  if (!PortAudioSucceeded("Opening PortAudio stream", portaudio_error)) {
-    return 1;
-  }
-
-  // Start the audio stream.
-  portaudio_error = Pa_StartStream(audio_stream.stream());
-
-  if (!PortAudioSucceeded("Starting PortAudio stream", portaudio_error)) {
+  if (!audio_output.Initialize(decoder)) {
     return 1;
   }
 
@@ -287,12 +312,7 @@ int main() {
   while (decoder.Read(bytes_read)) {
     size_t frames = bytes_read / frame_size;
 
-    portaudio_error =
-        Pa_WriteStream(audio_stream.stream(), decoder.buffer_data(), frames);
-
-    if (!PortAudioSucceeded("Writing to output stream", portaudio_error)) {
-      break;
-    }
+    if (!audio_output.WriteStream(decoder.buffer_data(), frames)) break;
   }
 
   // Check the reason the loop exited.
