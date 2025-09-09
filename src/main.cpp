@@ -131,7 +131,7 @@ class PortAudioSystem {
 // that manages audio stream opening and cleanup.
 class AudioStream {
  public:
-  AudioStream(PaStreamParameters output_parameters, long sample_rate) {
+  AudioStream(const PaStreamParameters& output_parameters, long sample_rate) {
     // Open the audio stream.
     //
     // Safe conversion of sample_rate_: MP3 sample rates are well below
