@@ -36,6 +36,7 @@ find_package(PortAudio REQUIRED)
 
 # Source files
 set(SOURCES
+    src/audio_output.cpp
     src/decoder.cpp
     src/error_handling.cpp
     src/main.cpp
