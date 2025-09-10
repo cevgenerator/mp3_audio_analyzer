@@ -1,7 +1,7 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.1.4`
+**Version:** `v0.1.5`
 
 A real-time MP3 audio analyzer (in development) using [mpg123](https://www.mpg123.de/) and [PortAudio](http://www.portaudio.com/).
 
@@ -102,8 +102,8 @@ project-root/
 
 ## To Do
 
-- [ ] Fix audio glitches
-- [ ] Investigate buffer underruns or latency issues
+- [x] Fix audio glitches
+- [x] Investigate buffer underruns or latency issues
 - [x] Refactor cleanup logic
 - [x] Refactor error handling into reusable functions
 - [x] Refactor audio logic into classes
