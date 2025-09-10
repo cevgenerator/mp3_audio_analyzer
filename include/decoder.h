@@ -1,3 +1,10 @@
+// Copyright (c) 2025 Kars Helderman
+// SPDX-License-Identifier: MIT
+//
+// Declaration of Decoder and Mpg123HandleWrapper classes,
+// which provide a safe and easy interface for decoding MP3 files
+// using the mpg123 library.
+
 #pragma once
 
 #include <mpg123.h>
@@ -9,8 +16,8 @@
 // Mpg123HandleWrapper class
 // ----------------------
 
-// Mpg123HandleWrapper is an RAII wrapper around mpg123_handle*
-// that manages decoder creation and cleanup automatically.
+// RAII wrapper for mpg123_handle*.
+// Ensures handle is created and destroyed properly.
 class Mpg123HandleWrapper {
  public:
   Mpg123HandleWrapper();
@@ -22,16 +29,15 @@ class Mpg123HandleWrapper {
 
  private:
   int error_ = MPG123_OK;
-  mpg123_handle* handle_ = nullptr;
+  mpg123_handle* handle_ = nullptr;  // Owned handle pointer.
 };
 
 // ----------------------
 // Decoder class
 // ----------------------
 
-// Decoder is a wrapper around the mpg123 library that handles
-// handle creation, file opening and reading, format extraction, and buffer
-// allocation.
+// Decoder wraps mpg123 and manages the full MP3 decoding pipeline.
+// Handles file loading, format detection, PCM decoding, and buffer management.
 class Decoder {
  public:
   Decoder();
@@ -42,7 +48,7 @@ class Decoder {
   // Reads decoded PCM data into the internal buffer.
   bool Read(size_t& bytes_read);
 
-  // Accessors.
+  // Accessors
   int mpg123_error() const;
   mpg123_handle* handle() const;
   long sample_rate() const;
@@ -52,7 +58,7 @@ class Decoder {
   int frame_size() const;
 
  private:
-  // Data members.
+  // Data members
   int mpg123_error_ = MPG123_ERR;
   Mpg123HandleWrapper handle_wrapper_;
   mpg123_handle* handle_;  // A raw pointer from handle_wrapper_ (no ownership).
@@ -61,13 +67,12 @@ class Decoder {
   int channels_ = 0;
   int encoding_format_ = 0;
 
-  size_t buffer_size_ = 0;  // Set by AllocateBuffer(); 0 indicates failure.
-  std::vector<unsigned char> buffer_;
-  int bytes_per_sample_ =
-      0;  // Set by DetermineBytesPerSample(); 0 indicates failure.
-  int frame_size_ = 0;  // Set by DetermineFrameSize(); 0 indicates failure.
+  size_t buffer_size_ = 0;             // 0 means allocation failure.
+  std::vector<unsigned char> buffer_;  // PCM data buffer.
+  int bytes_per_sample_ = 0;           // 0 indicates error.
+  int frame_size_ = 0;                 // 0 indicates error.
 
-  // Internal helper functions.
+  // Internal helper functions
   bool ValidateHandle() const;
   bool OpenFile(const char* path);
   bool GetFormatData();
