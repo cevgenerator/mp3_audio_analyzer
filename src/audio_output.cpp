@@ -35,15 +35,16 @@ int PortAudioSystem::error() const {
 
 AudioStream::AudioStream(const PaStreamParameters& output_parameters,
                          long sample_rate) {
+  constexpr unsigned long kFramesPerBuffer = 512;
+
   // Safe conversion of sample_rate_: MP3 sample rates are well below
   // precision limits of double.
   error_ = Pa_OpenStream(&stream_,
                          nullptr,  // No input.
-                         &output_parameters, sample_rate,
-                         paFramesPerBufferUnspecified,  // Let PortAudio decide.
-                         paClipOff,                     // No clipping.
-                         nullptr,                       // No callback.
-                         nullptr);  // No callback user data.
+                         &output_parameters, sample_rate, kFramesPerBuffer,
+                         paClipOff,  // No clipping.
+                         nullptr,    // No callback.
+                         nullptr);   // No callback user data.
 }
 
 AudioStream::~AudioStream() {
