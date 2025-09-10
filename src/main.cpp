@@ -16,34 +16,23 @@
 #include "error_handling.h"
 
 int main() {
-  // ---------------------------
-  // Setup mpg123 and configure decoder
-  // ---------------------------
-
+  // Initialize decoder with input file.
   Decoder decoder;
 
   if (!decoder.Initialize("../assets/gradient_deep_performance_edit.mp3")) {
     return 1;
   }
 
-  // ---------------------------
-  // Configure and open output stream
-  // ---------------------------
-
+  // Initialize audio output system.
   AudioOutput audio_output;
 
   if (!audio_output.Initialize(decoder)) {
     return 1;
   }
 
-  // ---------------------------
-  // Decode and stream audio
-  // ---------------------------
-
+  // Decode and stream audio in real time.
   size_t bytes_read;
 
-  // Decode the MP3 into PCM and write it to the output stream.
-  //
   // This loop runs until the MP3 is fully decoded. The buffer contains
   // bytes_read bytes of PCM data.
   while (decoder.Read(bytes_read)) {
