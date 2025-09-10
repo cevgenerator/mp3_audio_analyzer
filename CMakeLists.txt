@@ -5,12 +5,20 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Project setup
-project(mp3_audio_analyzer VERSION 0.1.3 LANGUAGES CXX)
+project(mp3_audio_analyzer VERSION 0.1.4 LANGUAGES CXX)
 
 # C++17 standard required
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Default to Release if nothing is set
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Optimization for Release builds
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 # Enable clang-tidy if installed
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
@@ -28,8 +36,10 @@ find_package(PortAudio REQUIRED)
 
 # Source files
 set(SOURCES
-    src/main.cpp
+    src/audio_output.cpp
+    src/decoder.cpp
     src/error_handling.cpp
+    src/main.cpp
 )
 
 # Build executable
