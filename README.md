@@ -107,6 +107,8 @@ project-root/
 - [x] Refactor cleanup logic
 - [x] Refactor error handling into reusable functions
 - [x] Refactor audio logic into classes
+- [ ] Add ring buffer
+- [ ] Add analysis thread
 - [ ] Add FFTW 
 - [ ] Add real-time audio analysis
 - [ ] Add 60 fps update/print loop for analysis
