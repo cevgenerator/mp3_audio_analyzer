@@ -19,6 +19,11 @@ Makefile
 cmake_install.cmake
 compile_commands.json
 
+# Compiled test binaries
+/tests/*.out
+/tests/*.exe
+/tests/ring_buffer_test
+
 # Editor files
 *.swp
 *~

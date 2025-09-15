@@ -1,7 +1,7 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.1.5`
+**Version:** `v0.1.6`
 
 A real-time MP3 audio analyzer (in development) using [mpg123](https://www.mpg123.de/) and [PortAudio](http://www.portaudio.com/).
 
@@ -88,6 +88,7 @@ project-root/
 ├── cmake/
 ├── include/
 ├── src/
+├── tests/
 ├── third_party_licenses/
 ├── CHANGELOG.md
 ├── CMakeLists.txt
@@ -107,11 +108,37 @@ project-root/
 - [x] Refactor cleanup logic
 - [x] Refactor error handling into reusable functions
 - [x] Refactor audio logic into classes
+- [x] Add ring buffer
+- [ ] Add analysis thread
 - [ ] Add FFTW 
 - [ ] Add real-time audio analysis
 - [ ] Add 60 fps update/print loop for analysis
 - [x] Add CMake support
 - [ ] Add cross-platform compatibility (Windows/macOS)
+
+---
+
+## Tests
+
+A basic manual test is included to verify `RingBuffer<T>` functionality (single-producer, single-consumer).
+
+### Running the RingBuffer Test
+
+From root, compile and run with:
+
+```bash
+g++ -std=c++17 -pthread \
+    -Iinclude \
+    tests/ring_buffer_test.cpp \
+    -o tests/ring_buffer_test
+./tests/ring_buffer_test
+```
+
+Expected output:
+
+```bash
+Test passed.
+```
 
 ---
 

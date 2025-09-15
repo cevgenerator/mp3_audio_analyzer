@@ -4,18 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2025-09-15
+- Added reusable lock-free SPSC RingBuffer<T> class
+- Added test for ring buffer under tests/
+- Updated README with test instructions
+
 ## [v0.1.5] - 2025-09-10
 ### Fixed
 - Audio glitches at startup and during volume changes resolved by setting `framesPerBuffer` to 512 instead of using `paFramesPerBufferUnspecified`
 
 ## [v0.1.4] – 2025-09-10
 ### Changed
-- Rename `Mpg123Decoder` to `Mpg123HandleWrapper` for clarity
-- Refactor `Decoder` to encapsulate mpg123 setup and format logic
-- Refactor `AudioOutput` to encapsulate PortAudio setup and streaming
-- Move and split decoder/audio output logic into separate files
-- Style improvements and consistency in comments
-- Improve performance: enable `-O2` optimizations by default
+- Renamed `Mpg123Decoder` to `Mpg123HandleWrapper` for clarity
+- Refactored `Decoder` to encapsulate mpg123 setup and format logic
+- Refactored `AudioOutput` to encapsulate PortAudio setup and streaming
+- Moved and split decoder/audio output logic into separate files
+- Styled improvements and consistency in comments
+- Improved performance: enable `-O2` optimizations by default
 
 ## [0.1.3] - 2025-09-03
 ### Refactor
