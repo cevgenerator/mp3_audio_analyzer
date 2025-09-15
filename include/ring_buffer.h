@@ -19,8 +19,6 @@
 #include <cstddef>
 #include <vector>
 
-#include "error_handling.h"
-
 // RingBuffer<T> is a lock-free, fixed-size circular buffer for single-producer,
 // single-consumer (SPSC) use cases.
 //
@@ -39,10 +37,10 @@ class RingBuffer {
 
   // Initialize() must be called right after the constructor.
   bool Initialize(size_t capacity) {
-    if (!Succeeded("Verifying RingBuffer capacity is a power of two",
-                   (capacity == 0 || (capacity & (capacity - 1)) != 0))) {
+    // Must be a power of two and non-zero.
+    if (capacity == 0 || (capacity & (capacity - 1)) != 0) {
       return false;
-    };
+    }
 
     capacity_ = capacity;
     buffer_.resize(capacity_);
