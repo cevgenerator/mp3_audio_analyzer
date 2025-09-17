@@ -5,22 +5,27 @@
 
 #include "analysis_thread.h"
 
-#include <thread>
-
-#include "ring_buffer.h"
+#include <iostream>
 
 namespace {
-constexpr size_t kDefaultCapacity = 2048;
-}
+constexpr size_t kChannels = 2;
+constexpr size_t kFftSize = 512;
+constexpr size_t kFrameCount = kFftSize;
+constexpr size_t kRingBufferCapacity = kFftSize * 4;
+}  // namespace
 
-AnalysisThread::AnalysisThread() {}
+AnalysisThread::AnalysisThread() : interleaved_(kFftSize * kChannels) {}
 
 AnalysisThread::~AnalysisThread() {
   Stop();
 }
 
 bool AnalysisThread::Initialize() {
-  if (!buffer_.Initialize(kDefaultCapacity)) {
+  if (!buffer_.Initialize(kRingBufferCapacity)) {
+    return false;
+  }
+
+  if (!fft.Initialize(kFftSize)) {
     return false;
   }
 
@@ -48,7 +53,24 @@ void AnalysisThread::Stop() {
 
 void AnalysisThread::Run() {
   while (running_) {
-    // TODO: Read ring buffer and write to FFTW.
+    // Read the ring buffer.
+    buffer_.Pop(interleaved_.data(), kFftSize * kChannels);
+
+    // Split the interleaved audio into two channels.
+    for (size_t i = 0; i < kFrameCount; i++) {
+      fft.input_left()[i] = interleaved_[2 * i];  // Copy each left sample.
+      fft.input_right()[i] =
+          interleaved_[(2 * i) + 1];  // Copy each right sample.
+    }
+
+    // Perform the FFT.
+    fft.Execute();
+
+    // Use the FFT output data before the loop runs again.
+    // Print just the first bin of the left channel (for testing).
+    auto bin = fft.output_left()[0];
+    std::cout << "FFT[0]: Re = " << bin[0] << ", Im = " << bin[1] << '\n';
+
     // TODO: Add analysis logic.
   }
 }

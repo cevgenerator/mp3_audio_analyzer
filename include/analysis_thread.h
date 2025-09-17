@@ -9,6 +9,7 @@
 #include <atomic>
 #include <thread>
 
+#include "fftw_wrapper.h"
 #include "ring_buffer.h"
 
 // Initialize() must be called right after the constructor.
@@ -29,4 +30,6 @@ class AnalysisThread {
   std::thread thread_;
   std::atomic<bool> running_;
   RingBuffer<float> buffer_;
+  std::vector<float> interleaved_;
+  FftwWrapper fft;
 };
