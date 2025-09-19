@@ -54,7 +54,7 @@ class Decoder {
   long sample_rate() const;
   int channels() const;
   int encoding_format() const;
-  const unsigned char* buffer_data() const;
+  const float* buffer_data() const;
   int frame_size() const;
 
  private:
@@ -67,10 +67,10 @@ class Decoder {
   int channels_ = 0;
   int encoding_format_ = 0;
 
-  size_t buffer_size_ = 0;             // 0 means allocation failure.
-  std::vector<unsigned char> buffer_;  // PCM data buffer.
-  int bytes_per_sample_ = 0;           // 0 indicates error.
-  int frame_size_ = 0;                 // 0 indicates error.
+  size_t buffer_size_ = 0;     // 0 means allocation failure.
+  std::vector<float> buffer_;  // PCM data buffer.
+  int bytes_per_sample_ = 0;   // 0 indicates error.
+  int frame_size_ = 0;         // 0 indicates error.
 
   // Internal helper functions
   bool ValidateHandle() const;

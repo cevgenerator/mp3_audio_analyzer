@@ -78,7 +78,7 @@ bool AudioOutput::Initialize(const Decoder& decoder) {
          OpenStream(decoder) && StartStream();
 }
 
-bool AudioOutput::WriteStream(const unsigned char* buffer, size_t frames) {
+bool AudioOutput::WriteStream(const float* buffer, size_t frames) {
   if (!audio_stream_) return false;
 
   portaudio_error_ = Pa_WriteStream(audio_stream_->stream(), buffer, frames);
