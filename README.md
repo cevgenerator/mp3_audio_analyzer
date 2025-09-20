@@ -5,9 +5,9 @@
 
 A real-time MP3 audio analyzer (in development) using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/) and [FFTW](https://fftw.org/).
 
-Currently, the project plays back MP3 files while decoding them to raw PCM audio. Future versions will analyze the audio data in real-time and output the results (e.g., for audio-reactive graphics).
+Currently, the project plays back MP3 files while decoding them to raw PCM audio and performing a Fast Fourier Transform. Future versions will further analyze the audio data in real-time and output the results (e.g., for audio-reactive graphics).
 
-*Note: This project is under active development. Playback is functional; analysis features will be added soon.*
+*Note: This project is under active development. Playback is functional; further analysis features will be added soon.*
 
 ---
 

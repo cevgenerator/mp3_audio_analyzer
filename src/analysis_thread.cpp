@@ -11,7 +11,8 @@ namespace {
 constexpr size_t kChannels = 2;
 constexpr size_t kFftSize = 512;
 constexpr size_t kFrameCount = kFftSize;
-constexpr size_t kRingBufferCapacity = kFftSize * 4;
+constexpr size_t kRingBufferCapacity =
+    4096;  // Big enough for number of elements to be written.
 }  // namespace
 
 AnalysisThread::AnalysisThread() : interleaved_(kFftSize * kChannels) {}
@@ -67,9 +68,14 @@ void AnalysisThread::Run() {
     fft.Execute();
 
     // Use the FFT output data before the loop runs again.
-    // Print just the first bin of the left channel (for testing).
-    auto bin = fft.output_left()[0];
-    std::cout << "FFT[0]: Re = " << bin[0] << ", Im = " << bin[1] << '\n';
+    // Print the second left and right bin to show FFTW is working.
+    auto bin_left = fft.output_left()[1];
+    auto bin_right = fft.output_right()[1];
+
+    std::cout << "FFT_L[1]: Re = " << bin_left[0] << ", Im = " << bin_left[1]
+              << "\n";
+    std::cout << "FFT_R[1]: Re = " << bin_right[0] << ", Im = " << bin_right[1]
+              << "\n\n";
 
     // TODO: Add analysis logic.
   }

@@ -31,6 +31,13 @@ int main() {
     return 1;
   }
 
+  // Initialize analysis thread.
+  AnalysisThread analysis_thread;
+
+  if (!analysis_thread.Initialize()) {
+    return 1;
+  }
+
   // Decode and stream audio in real time.
   size_t bytes_read;
 
@@ -39,6 +46,12 @@ int main() {
   while (decoder.Read(bytes_read)) {
     size_t frames = bytes_read / decoder.frame_size();
 
+    // Copy buffer to analysis thread.
+    if (!analysis_thread.buffer().Push(decoder.buffer_data(), frames * 2)) {
+      break;
+    }
+
+    // Copy buffer to audio output.
     if (!audio_output.WriteStream(decoder.buffer_data(), frames)) break;
   }
 
