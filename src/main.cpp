@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // MP3 Audio Player using mpg123 and PortAudio.
 // Decodes an MP3 file to PCM and streams it in real-time.
@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 
+#include "analysis_thread.h"
 #include "audio_output.h"
 #include "decoder.h"
 #include "error_handling.h"

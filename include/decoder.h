@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Declaration of Decoder and Mpg123HandleWrapper classes,
 // which provide a safe and easy interface for decoding MP3 files

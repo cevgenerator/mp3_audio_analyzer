@@ -33,12 +33,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Find dependencies
 find_package(MPG123 REQUIRED)
 find_package(PortAudio REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FFTW REQUIRED fftw3f)
 
 # Source files
 set(SOURCES
+    src/analysis_thread.cpp
     src/audio_output.cpp
     src/decoder.cpp
     src/error_handling.cpp
+    src/fftw_wrapper.cpp
     src/main.cpp
 )
 
@@ -48,6 +52,7 @@ add_executable(mp3_analyzer ${SOURCES})
 # Link libraries
 target_link_libraries(mp3_analyzer
     PRIVATE
+        ${FFTW_LIBRARIES}
         ${MPG123_LIBRARIES}
         ${PortAudio_LIBRARIES}
 )
@@ -55,6 +60,7 @@ target_link_libraries(mp3_analyzer
 # Include headers
 target_include_directories(mp3_analyzer
   PRIVATE
+    ${FFTW_INCLUDE_DIRS}
     ${MPG123_INCLUDE_DIRS}
     ${PortAudio_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
