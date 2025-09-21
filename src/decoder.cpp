@@ -2,11 +2,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of the Decoder and Mpg123HandleWrapper classes.
-// Handles MPG123 library interactions, error checking, and buffer management.
+// These handle MPG123 library interactions, error checking, and buffer
+// management.
 
 #include "decoder.h"
 
 #include "error_handling.h"
+
+namespace {
+constexpr long kSampleRate = 44100;
+}  // namespace
 
 // ----------------------
 // Mpg123HandleWrapper implementation
@@ -93,7 +98,7 @@ bool Decoder::OpenFile(const char* path) {
 // Sets decoding format to float.
 bool Decoder::GetFormatData() {
   mpg123_format_none(handle_);
-  mpg123_format(handle_, 44100, MPG123_STEREO, MPG123_ENC_FLOAT_32);
+  mpg123_format(handle_, kSampleRate, MPG123_STEREO, MPG123_ENC_FLOAT_32);
 
   mpg123_error_ =
       mpg123_getformat(handle_, &sample_rate_, &channels_, &encoding_format_);

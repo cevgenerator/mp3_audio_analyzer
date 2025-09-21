@@ -9,7 +9,7 @@
 
 #include <portaudio.h>
 
-#include <cstddef>  // For size_t.
+#include <cstddef>
 #include <optional>
 
 #include "decoder.h"
@@ -71,7 +71,12 @@ class AudioOutput {
   PortAudioSystem audio_system_;
   int portaudio_error_ = paNotInitialized;
   PaStreamParameters output_parameters_{};
+
+  // audio_stream_ is constructed later when the necessary information is
+  // available.
   std::optional<AudioStream> audio_stream_;
+
+  // Internal methods
 
   static PaSampleFormat GetPortAudioFormat(int mpg123_encoding);
 

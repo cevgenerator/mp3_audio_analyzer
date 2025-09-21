@@ -80,7 +80,8 @@ class RingBuffer {
 
     // If wraparound is needed, write the remaining data to the beginning of the
     // buffer.
-    std::copy_n(data + first_copy_count, count - first_copy_count, &buffer_[0]);
+    std::copy_n(data + first_copy_count, count - first_copy_count,
+                buffer_.data());
 
     // Update head_ atomically.
     // `release` ensures the memory copy is visible to the consumer before it
@@ -115,7 +116,8 @@ class RingBuffer {
     std::copy_n(&buffer_[index], first_copy_count, dest);
 
     // Copy the second segment, if wrapping is needed.
-    std::copy_n(&buffer_[0], count - first_copy_count, dest + first_copy_count);
+    std::copy_n(buffer_.data(), count - first_copy_count,
+                dest + first_copy_count);
 
     // Update tail_ atomically (release ensures memory copy is visible).
     tail_.store(tail + count, std::memory_order_release);
