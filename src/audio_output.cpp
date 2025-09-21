@@ -48,11 +48,10 @@ AudioStream::AudioStream(const PaStreamParameters& output_parameters,
 }
 
 AudioStream::~AudioStream() {
-  if (Pa_IsStreamActive(stream_) == 1) {
-    Pa_StopStream(stream_);
-  }
-
   if (stream_ != nullptr) {
+    if (Pa_IsStreamActive(stream_) == 1) {
+      Pa_StopStream(stream_);
+    }
     Pa_CloseStream(stream_);
   }
 }

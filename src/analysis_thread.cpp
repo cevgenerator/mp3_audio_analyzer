@@ -74,8 +74,8 @@ void AnalysisThread::Run() {
     if (++fft_count_ % 43 == 0) {
       // Use the FFT output data before the loop runs again.
       // Print the second left and right bin to show FFTW is working.
-      auto bin_left = fft.output_left()[1];
-      auto bin_right = fft.output_right()[1];
+      const auto* bin_left = fft.output_left()[1];
+      const auto* bin_right = fft.output_right()[1];
 
       std::cout << "FFT_L[1]: Re = " << bin_left[0] << ", Im = " << bin_left[1]
                 << "\n";

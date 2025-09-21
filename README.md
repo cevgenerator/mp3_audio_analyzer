@@ -45,6 +45,12 @@ This will produce the executable:
 ./mp3_analyzer
 ```
 
+*Note: On some Linux systems, ALSA warnings (or similar messages) may appear at startup. These are expected and caused by the audio backend probing for devices. You can suppress them by redirecting stderr:*
+
+```bash
+./mp3_analyzer 2> /dev/null
+```
+
 ---
 
 ## Build Options

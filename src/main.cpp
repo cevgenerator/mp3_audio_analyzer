@@ -8,7 +8,6 @@
 #include <portaudio.h>
 
 #include <cstddef>
-#include <iostream>
 #include <string>
 
 #include "analysis_thread.h"
