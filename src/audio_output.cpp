@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of audio output classes using the PortAudio library.
 
@@ -78,7 +78,7 @@ bool AudioOutput::Initialize(const Decoder& decoder) {
          OpenStream(decoder) && StartStream();
 }
 
-bool AudioOutput::WriteStream(const unsigned char* buffer, size_t frames) {
+bool AudioOutput::WriteStream(const float* buffer, size_t frames) {
   if (!audio_stream_) return false;
 
   portaudio_error_ = Pa_WriteStream(audio_stream_->stream(), buffer, frames);

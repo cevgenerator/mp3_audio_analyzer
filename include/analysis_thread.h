@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Declaration of AnalysisThread class. Creates a thread for reading audio data
 // from a ring buffer and performing analysis using FFTW.
@@ -9,6 +9,7 @@
 #include <atomic>
 #include <thread>
 
+#include "fftw_wrapper.h"
 #include "ring_buffer.h"
 
 // Initialize() must be called right after the constructor.
@@ -29,4 +30,7 @@ class AnalysisThread {
   std::thread thread_;
   std::atomic<bool> running_;
   RingBuffer<float> buffer_;
+  std::vector<float> interleaved_;
+  FftwWrapper fft;
+  int fft_count_ = 0;
 };

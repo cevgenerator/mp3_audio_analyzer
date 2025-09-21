@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of the Decoder and Mpg123HandleWrapper classes.
 // Handles MPG123 library interactions, error checking, and buffer management.
@@ -43,9 +43,13 @@ bool Decoder::Initialize(const char* path) {
 
 // Decodes the next chunk of audio data into the internal buffer.
 // Sets bytes_read to the number of PCM bytes written.
+// Reinterpret buffer_ as unsigned char* so mpg123_read() can write raw PCM
+// data. Assumes buffer_ is sized in bytes and stores float samples
+// (MPG123_ENC_FLOAT_32).
 bool Decoder::Read(size_t& bytes_read) {
   mpg123_error_ =
-      mpg123_read(handle_, buffer_.data(), buffer_size_, &bytes_read);
+      mpg123_read(handle_, reinterpret_cast<unsigned char*>(buffer_.data()),
+                  buffer_size_, &bytes_read);
 
   return Mpg123Succeeded("Reading MP3", mpg123_error_);
 }
@@ -67,7 +71,7 @@ int Decoder::channels() const {
 int Decoder::encoding_format() const {
   return encoding_format_;
 }
-const unsigned char* Decoder::buffer_data() const {
+const float* Decoder::buffer_data() const {
   return buffer_.data();
 }
 int Decoder::frame_size() const {
@@ -86,7 +90,11 @@ bool Decoder::OpenFile(const char* path) {
   return Mpg123Succeeded("Opening file", mpg123_error_);
 }
 
+// Sets decoding format to float.
 bool Decoder::GetFormatData() {
+  mpg123_format_none(handle_);
+  mpg123_format(handle_, 44100, MPG123_STEREO, MPG123_ENC_FLOAT_32);
+
   mpg123_error_ =
       mpg123_getformat(handle_, &sample_rate_, &channels_, &encoding_format_);
 
@@ -94,9 +102,11 @@ bool Decoder::GetFormatData() {
 }
 
 bool Decoder::AllocateBuffer() {
-  buffer_size_ = mpg123_outblock(handle_);  // Get recommended buffer size.
+  buffer_size_ =
+      mpg123_outblock(handle_);  // Get recommended buffer size in bytes.
 
-  buffer_.resize(buffer_size_);  // Allocate buffer.
+  // Allocate float buffer: size in samples = bytes / sizeof(float)
+  buffer_.resize(buffer_size_ / sizeof(float));
 
   return Succeeded("Allocating buffer", (buffer_size_ == 0));
 }

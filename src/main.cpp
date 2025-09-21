@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // MP3 Audio Player using mpg123 and PortAudio.
 // Decodes an MP3 file to PCM and streams it in real-time.
@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 
+#include "analysis_thread.h"
 #include "audio_output.h"
 #include "decoder.h"
 #include "error_handling.h"
@@ -30,6 +31,13 @@ int main() {
     return 1;
   }
 
+  // Initialize analysis thread.
+  AnalysisThread analysis_thread;
+
+  if (!analysis_thread.Initialize()) {
+    return 1;
+  }
+
   // Decode and stream audio in real time.
   size_t bytes_read;
 
@@ -38,6 +46,12 @@ int main() {
   while (decoder.Read(bytes_read)) {
     size_t frames = bytes_read / decoder.frame_size();
 
+    // Copy buffer to analysis thread.
+    if (!analysis_thread.buffer().Push(decoder.buffer_data(), frames * 2)) {
+      break;
+    }
+
+    // Copy buffer to audio output.
     if (!audio_output.WriteStream(decoder.buffer_data(), frames)) break;
   }
 

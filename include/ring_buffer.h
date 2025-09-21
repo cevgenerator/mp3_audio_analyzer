@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Lock-free, single-producer single-consumer (SPSC) ring buffer.
 //
@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <iostream>
 #include <vector>
 
 // RingBuffer<T> is a lock-free, fixed-size circular buffer for single-producer,
@@ -51,7 +52,11 @@ class RingBuffer {
   // Pushes `count` items into the ring buffer. Returns false if not enough
   // space.
   bool Push(const T* data, size_t count) {
-    if (data == nullptr || count == 0) return false;
+    if (data == nullptr || count == 0) {
+      std::cerr << "Error: Invalid input for RingBuffer::Push().\n";
+
+      return false;
+    }
 
     // Load head and tail atomically.
     size_t head = head_.load(std::memory_order_relaxed);
@@ -59,7 +64,11 @@ class RingBuffer {
 
     size_t free_space = capacity_ - (head - tail);
 
-    if (count > free_space) return false;
+    if (count > free_space) {
+      std::cerr << "Error: Not enough free space in ring buffer.\n";
+
+      return false;
+    }
 
     size_t index = head & (capacity_ - 1);  // Calculate write position.
 
@@ -83,7 +92,11 @@ class RingBuffer {
 
   // Copies `count` items from buffer to destination.
   bool Pop(T* dest, size_t count) {
-    if (dest == nullptr || count == 0) return false;
+    if (dest == nullptr || count == 0) {
+      std::cerr << "Error: Invalid input for RingBuffer::Pop().\n";
+
+      return false;
+    }
 
     // Load tail and head atomically.
     size_t tail = tail_.load(std::memory_order_relaxed);

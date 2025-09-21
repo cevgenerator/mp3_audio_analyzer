@@ -1,13 +1,13 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.1.6`
+**Version:** `v0.2.0`
 
-A real-time MP3 audio analyzer (in development) using [mpg123](https://www.mpg123.de/) and [PortAudio](http://www.portaudio.com/).
+A real-time MP3 audio analyzer (in development) using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/) and [FFTW](https://fftw.org/).
 
-Currently, the project plays back MP3 files while decoding them to raw PCM audio. Future versions will analyze the audio data in real-time and output the results (e.g., for audio-reactive graphics).
+Currently, the project plays back MP3 files while decoding them to raw PCM audio and performing a Fast Fourier Transform. Future versions will further analyze the audio data in real-time and output the results (e.g., for audio-reactive graphics).
 
-*Note: This project is under active development. Playback is functional; analysis features will be added soon.*
+*Note: This project is under active development. Playback is functional; further analysis features will be added soon.*
 
 ---
 
@@ -16,6 +16,7 @@ Currently, the project plays back MP3 files while decoding them to raw PCM audio
 - Uses the `mpg123` library to decode MP3 files
 - Dynamically allocates a buffer to store raw PCM data
 - Uses the `portaudio` library to play PCM data as audio
+- Uses `FFTW` to perform an FFT
 - Handles errors and cleanly shuts down
 
 ---
@@ -26,7 +27,7 @@ Make sure you have the required development tools:
 
 ```bash
 sudo apt update
-sudo apt install cmake libmpg123-dev portaudio19-dev build-essential
+sudo apt install cmake libmpg123-dev portaudio19-dev libfftw3-dev build-essential
 ```
 
 Then from the project root:
@@ -64,6 +65,7 @@ cmake --build .
 ## Dependencies
 
 - CMake ≥ 3.10 (build system)
+- FFTW for the Fast Fourier Transform
 - libmpg123 for MP3 decoding
 - PortAudio for audio playback
 - C++17-compatible compiler (e.g., g++, clang++)
@@ -109,8 +111,8 @@ project-root/
 - [x] Refactor error handling into reusable functions
 - [x] Refactor audio logic into classes
 - [x] Add ring buffer
-- [ ] Add analysis thread
-- [ ] Add FFTW 
+- [x] Add analysis thread
+- [x] Add FFTW 
 - [ ] Add real-time audio analysis
 - [ ] Add 60 fps update/print loop for analysis
 - [x] Add CMake support
@@ -144,13 +146,14 @@ Test passed.
 
 ## License
 
-This code is released under the MIT License.
+This code is released under the GPL-2+ License.
 See LICENSE file for details.
 
 ### Third-party libraries
 
-- **PortAudio** — licensed under the [MIT License](http://www.portaudio.com/license.html)
+- **FFTW** — licensed under the [GPL-2+](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 - **mpg123** — licensed under the [LGPL 2.1+](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
+- **PortAudio** — licensed under the [MIT License](http://www.portaudio.com/license.html)
 
 These libraries are not included in this repository, but are dynamically linked at runtime.
 

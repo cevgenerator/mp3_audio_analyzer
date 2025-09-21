@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Kars Helderman
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "error_handling.h"
 
 #include <mpg123.h>
