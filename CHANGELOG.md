@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-09-21
+- Added `FftwWrapper` class to encapsulate FFTW initialization and execution
+- Refactored `AudioOutput` and `Decoder` classes to use `float` for FFTW compatibility
+- Implemented analysis thread to enable FFT
+- Improved FFT logic and demonstration output printing
+- Updated project license to **GPL-2.0-or-later** to comply with FFTW’s license terms
+
 ## [0.1.6] - 2025-09-15
 - Added reusable lock-free SPSC RingBuffer<T> class
 - Added test for ring buffer under tests/

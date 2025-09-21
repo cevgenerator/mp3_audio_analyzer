@@ -1,7 +1,7 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.1.6`
+**Version:** `v0.2.0`
 
 A real-time MP3 audio analyzer (in development) using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/) and [FFTW](https://fftw.org/).
 
@@ -111,8 +111,8 @@ project-root/
 - [x] Refactor error handling into reusable functions
 - [x] Refactor audio logic into classes
 - [x] Add ring buffer
-- [ ] Add analysis thread
-- [ ] Add FFTW 
+- [x] Add analysis thread
+- [x] Add FFTW 
 - [ ] Add real-time audio analysis
 - [ ] Add 60 fps update/print loop for analysis
 - [x] Add CMake support
