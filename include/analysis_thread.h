@@ -32,4 +32,5 @@ class AnalysisThread {
   RingBuffer<float> buffer_;
   std::vector<float> interleaved_;
   FftwWrapper fft;
+  int fft_count_ = 0;
 };

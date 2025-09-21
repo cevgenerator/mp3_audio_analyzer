@@ -55,7 +55,10 @@ void AnalysisThread::Stop() {
 void AnalysisThread::Run() {
   while (running_) {
     // Read the ring buffer.
-    buffer_.Pop(interleaved_.data(), kFftSize * kChannels);
+    // Skip and try again if not enough data is available.
+    if (!buffer_.Pop(interleaved_.data(), kFftSize * kChannels)) {
+      continue;  // Prevent old data is used again.
+    }
 
     // Split the interleaved audio into two channels.
     for (size_t i = 0; i < kFrameCount; i++) {
@@ -67,15 +70,18 @@ void AnalysisThread::Run() {
     // Perform the FFT.
     fft.Execute();
 
-    // Use the FFT output data before the loop runs again.
-    // Print the second left and right bin to show FFTW is working.
-    auto bin_left = fft.output_left()[1];
-    auto bin_right = fft.output_right()[1];
+    // Only print about twice per second.
+    if (++fft_count_ % 43 == 0) {
+      // Use the FFT output data before the loop runs again.
+      // Print the second left and right bin to show FFTW is working.
+      auto bin_left = fft.output_left()[1];
+      auto bin_right = fft.output_right()[1];
 
-    std::cout << "FFT_L[1]: Re = " << bin_left[0] << ", Im = " << bin_left[1]
-              << "\n";
-    std::cout << "FFT_R[1]: Re = " << bin_right[0] << ", Im = " << bin_right[1]
-              << "\n\n";
+      std::cout << "FFT_L[1]: Re = " << bin_left[0] << ", Im = " << bin_left[1]
+                << "\n";
+      std::cout << "FFT_R[1]: Re = " << bin_right[0]
+                << ", Im = " << bin_right[1] << "\n\n";
+    }
 
     // TODO: Add analysis logic.
   }

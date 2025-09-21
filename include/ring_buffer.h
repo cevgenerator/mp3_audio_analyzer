@@ -92,7 +92,11 @@ class RingBuffer {
 
   // Copies `count` items from buffer to destination.
   bool Pop(T* dest, size_t count) {
-    if (dest == nullptr || count == 0) return false;
+    if (dest == nullptr || count == 0) {
+      std::cerr << "Error: Invalid input for RingBuffer::Pop().\n";
+
+      return false;
+    }
 
     // Load tail and head atomically.
     size_t tail = tail_.load(std::memory_order_relaxed);
