@@ -25,6 +25,7 @@ class AnalysisThread {
  private:
   void Start();
   void Stop();
+  void CalculateRms();
   void Run();
 
   std::thread thread_;
@@ -33,4 +34,6 @@ class AnalysisThread {
   std::vector<float> interleaved_;
   FftwWrapper fft;
   int fft_count_ = 0;
+  float rms_left_ = 0.0F;
+  float rms_right_ = 0.0F;
 };

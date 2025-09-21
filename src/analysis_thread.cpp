@@ -5,6 +5,7 @@
 
 #include "analysis_thread.h"
 
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -52,6 +53,21 @@ void AnalysisThread::Stop() {
   }
 }
 
+// Should be called after interleaved audio has been split.
+void AnalysisThread::CalculateRms() {
+  float rms_left = 0.0F;
+  float rms_right = 0.0F;
+
+  for (size_t i = 0; i < kFftSize; i++) {
+    rms_left += fft.input_left()[i] * fft.input_left()[i];
+    rms_right += fft.input_right()[i] * fft.input_right()[i];
+  }
+
+  // Store results in data members.
+  rms_left_ = std::sqrt(rms_left / kFftSize);
+  rms_right_ = std::sqrt(rms_right / kFftSize);
+}
+
 void AnalysisThread::Run() {
   while (running_) {
     // Read the ring buffer.
@@ -67,6 +83,8 @@ void AnalysisThread::Run() {
           interleaved_[(2 * i) + 1];  // Copy each right sample.
     }
 
+    CalculateRms();
+
     // Perform the FFT.
     fft.Execute();
 
@@ -80,9 +98,9 @@ void AnalysisThread::Run() {
       std::cout << "FFT_L[1]: Re = " << bin_left[0] << ", Im = " << bin_left[1]
                 << "\n";
       std::cout << "FFT_R[1]: Re = " << bin_right[0]
-                << ", Im = " << bin_right[1] << "\n\n";
+                << ", Im = " << bin_right[1] << '\n';
+      std::cout << "RMS_L: " << rms_left_ << '\n';
+      std::cout << "RMS_R: " << rms_right_ << "\n\n";
     }
-
-    // TODO: Add analysis logic.
   }
 }
