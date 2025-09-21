@@ -1,13 +1,13 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// MP3 Audio Player using mpg123 and PortAudio.
-// Decodes an MP3 file to PCM and streams it in real-time.
+// MP3 Audio Player using FFTW, mpg123 and PortAudio.
+// Decodes an MP3 file to PCM and streams and analyses it in real-time.
 
 #include <mpg123.h>
 #include <portaudio.h>
 
-#include <cstddef>  // For size_t.
+#include <cstddef>
 #include <iostream>
 #include <string>
 
@@ -34,11 +34,14 @@ int main() {
   // Initialize analysis thread.
   AnalysisThread analysis_thread;
 
-  if (!analysis_thread.Initialize()) {
+  if (!analysis_thread.Initialize()) {  // Performs the FFT.
     return 1;
   }
 
-  // Decode and stream audio in real time.
+  // ------------------------------
+  // Real time audio decoding and streaming
+  // ------------------------------
+
   size_t bytes_read;
 
   // This loop runs until the MP3 is fully decoded. The buffer contains

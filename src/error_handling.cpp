@@ -1,5 +1,7 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
+//
+// Implementation of error checking helper functions.
 
 #include "error_handling.h"
 

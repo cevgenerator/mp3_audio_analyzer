@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of the Decoder and Mpg123HandleWrapper classes.
-// Handles MPG123 library interactions, error checking, and buffer management.
+// These handle MPG123 library interactions, error checking, and buffer
+// management.
 
 #include "decoder.h"
 

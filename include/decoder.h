@@ -9,7 +9,7 @@
 
 #include <mpg123.h>
 
-#include <cstddef>  // For size_t.
+#include <cstddef>
 #include <vector>
 
 // ----------------------
