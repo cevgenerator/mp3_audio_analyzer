@@ -72,9 +72,10 @@ void AnalysisThread::CalculateRms() {
     rms_right += fft.input_right()[i] * fft.input_right()[i];
   }
 
-  // Store results in data members.
-  rms_left_ = std::sqrt(rms_left / analysis::kFftSize);
-  rms_right_ = std::sqrt(rms_right / analysis::kFftSize);
+  rms_left = std::sqrt(rms_left / analysis::kFftSize);
+  rms_right = std::sqrt(rms_right / analysis::kFftSize);
+
+  rms_ = (rms_left + rms_right) / analysis::kChannels;
 }
 
 // Must be called after interleaved audio has been split.
@@ -161,8 +162,7 @@ void AnalysisThread::Run() {
                 << "\n";
       std::cout << "FFT_R[1]: Re = " << bin_right[0]
                 << ", Im = " << bin_right[1] << '\n';
-      std::cout << "RMS_L: " << rms_left_ << '\n';
-      std::cout << "RMS_R: " << rms_right_ << '\n';
+      std::cout << "RMS: " << rms_ << '\n';
       std::cout << "Bandwidth: " << bandwidth_ << '\n';
       std::cout << "Correlation: " << correlation_ << "\n\n";
     }

@@ -37,8 +37,7 @@ class AnalysisThread {
   std::vector<float> interleaved_;
   FftwWrapper fft;
   int fft_count_ = 0;
-  float rms_left_ = 0.0F;
-  float rms_right_ = 0.0F;
+  float rms_ = 0.0F;
   float sample_rate_ = 0;
   float bandwidth_ = 0.0F;
   float correlation_ = 0.0F;
