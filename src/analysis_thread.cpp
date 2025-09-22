@@ -8,22 +8,22 @@
 #include <cmath>
 #include <iostream>
 
+#include "analysis_constants.h"
+
 namespace {
 
 // General audio settings
-constexpr size_t kChannels = 2;
-constexpr size_t kFftSize = 512;
-constexpr size_t kFrameCount = kFftSize;
+constexpr size_t kFrameCount = analysis::kFftSize;
 constexpr size_t kRingBufferCapacity = 4096;  // Enough for streaming.
 
 // FFT-related constants
-constexpr size_t kFftBinCount = kFftSize / 2;
-constexpr float kFftSizeInverse = 1.0F / kFftSize;
+constexpr float kFftSizeInverse = 1.0F / analysis::kFftSize;
 constexpr float kEnergyThreshold = 0.1F;
 
 }  // namespace
 
-AnalysisThread::AnalysisThread() : interleaved_(kFftSize * kChannels) {}
+AnalysisThread::AnalysisThread()
+    : interleaved_(analysis::kFftSize * analysis::kChannels) {}
 
 AnalysisThread::~AnalysisThread() {
   Stop();
@@ -36,7 +36,7 @@ bool AnalysisThread::Initialize(long sample_rate) {
     return false;
   }
 
-  if (!fft.Initialize(kFftSize)) {
+  if (!fft.Initialize(analysis::kFftSize)) {
     return false;
   }
 
@@ -67,21 +67,21 @@ void AnalysisThread::CalculateRms() {
   float rms_left = 0.0F;
   float rms_right = 0.0F;
 
-  for (size_t i = 0; i < kFftSize; i++) {
+  for (size_t i = 0; i < analysis::kFftSize; i++) {
     rms_left += fft.input_left()[i] * fft.input_left()[i];
     rms_right += fft.input_right()[i] * fft.input_right()[i];
   }
 
   // Store results in data members.
-  rms_left_ = std::sqrt(rms_left / kFftSize);
-  rms_right_ = std::sqrt(rms_right / kFftSize);
+  rms_left_ = std::sqrt(rms_left / analysis::kFftSize);
+  rms_right_ = std::sqrt(rms_right / analysis::kFftSize);
 }
 
 // Must be called after interleaved audio has been split.
 void AnalysisThread::CalculateStereoCorrelation() {
   float correlation = 0.0F;
 
-  for (size_t i = 0; i < kFftSize; ++i) {
+  for (size_t i = 0; i < analysis::kFftSize; ++i) {
     correlation += fft.input_left()[i] * fft.input_right()[i];
   }
 
@@ -95,7 +95,7 @@ float AnalysisThread::CalculateBandwidth(const fftwf_complex* output) const {
   float max_freq = -1.0F;
 
   // Only iterate through half the bins since FFT output is symmetric.
-  for (size_t i = 0; i < kFftBinCount; ++i) {
+  for (size_t i = 0; i < analysis::kFftBinCount; ++i) {
     float real = output[i][0];
     float imaginary = output[i][1];
     float magnitude = std::sqrt((real * real) + (imaginary * imaginary));
@@ -123,14 +123,15 @@ void AnalysisThread::CalculateAverageBandwidth() {
   float bandwidth_left = CalculateBandwidth(fft.output_left());
   float bandwidth_right = CalculateBandwidth(fft.output_right());
 
-  bandwidth_ = (bandwidth_left + bandwidth_right) / kChannels;
+  bandwidth_ = (bandwidth_left + bandwidth_right) / analysis::kChannels;
 }
 
 void AnalysisThread::Run() {
   while (running_) {
     // Read the ring buffer.
     // Skip and try again if not enough data is available.
-    if (!buffer_.Pop(interleaved_.data(), kFftSize * kChannels)) {
+    if (!buffer_.Pop(interleaved_.data(),
+                     analysis::kFftSize * analysis::kChannels)) {
       continue;  // Prevent old data is used again.
     }
 
