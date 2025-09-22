@@ -77,6 +77,17 @@ void AnalysisThread::CalculateRms() {
   rms_right_ = std::sqrt(rms_right / kFftSize);
 }
 
+// Must be called after interleaved audio has been split.
+void AnalysisThread::CalculateStereoCorrelation() {
+  float correlation = 0.0F;
+
+  for (size_t i = 0; i < kFftSize; ++i) {
+    correlation += fft.input_left()[i] * fft.input_right()[i];
+  }
+
+  correlation_ = correlation * kFftSizeInverse;
+}
+
 // Calculates the frequency bandwidth for 1 channel.
 // Is called by CalculateAverageBandwidth().
 float AnalysisThread::CalculateBandwidth(const fftwf_complex* output) const {
@@ -131,6 +142,7 @@ void AnalysisThread::Run() {
     }
 
     CalculateRms();
+    CalculateStereoCorrelation();
 
     // Perform the FFT.
     fft.Execute();
@@ -150,7 +162,8 @@ void AnalysisThread::Run() {
                 << ", Im = " << bin_right[1] << '\n';
       std::cout << "RMS_L: " << rms_left_ << '\n';
       std::cout << "RMS_R: " << rms_right_ << '\n';
-      std::cout << "Bandwidth: " << bandwidth_ << "\n\n";
+      std::cout << "Bandwidth: " << bandwidth_ << '\n';
+      std::cout << "Correlation: " << correlation_ << "\n\n";
     }
   }
 }

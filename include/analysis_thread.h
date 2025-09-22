@@ -26,6 +26,7 @@ class AnalysisThread {
   void Start();
   void Stop();
   void CalculateRms();
+  void CalculateStereoCorrelation();
   float CalculateBandwidth(const fftwf_complex* output) const;
   void CalculateAverageBandwidth();
   void Run();
@@ -40,4 +41,5 @@ class AnalysisThread {
   float rms_right_ = 0.0F;
   float sample_rate_ = 0;
   float bandwidth_ = 0.0F;
+  float correlation_ = 0.0F;
 };
