@@ -18,13 +18,17 @@ class AnalysisThread {
   AnalysisThread();
   ~AnalysisThread();
 
-  bool Initialize();
+  bool Initialize(long sample_rate);
 
   RingBuffer<float>& buffer();  // So producer can write into it.
 
  private:
   void Start();
   void Stop();
+  void CalculateRms();
+  void CalculateStereoCorrelation();
+  float CalculateBandwidth(const fftwf_complex* output) const;
+  void CalculateAverageBandwidth();
   void Run();
 
   std::thread thread_;
@@ -33,4 +37,9 @@ class AnalysisThread {
   std::vector<float> interleaved_;
   FftwWrapper fft;
   int fft_count_ = 0;
+  float rms_left_ = 0.0F;
+  float rms_right_ = 0.0F;
+  float sample_rate_ = 0;
+  float bandwidth_ = 0.0F;
+  float correlation_ = 0.0F;
 };

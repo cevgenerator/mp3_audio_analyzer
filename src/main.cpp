@@ -33,7 +33,7 @@ int main() {
   // Initialize analysis thread.
   AnalysisThread analysis_thread;
 
-  if (!analysis_thread.Initialize()) {  // Performs the FFT.
+  if (!analysis_thread.Initialize(decoder.sample_rate())) {
     return 1;
   }
 
