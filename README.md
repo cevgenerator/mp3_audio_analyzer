@@ -120,7 +120,7 @@ project-root/
 - [x] Add analysis thread
 - [x] Add FFTW 
 - [x] Add real-time audio analysis
-- [ ] Add 60 fps update/print loop for analysis
+- [ ] Add visualizer
 - [x] Add CMake support
 - [ ] Add cross-platform compatibility (Windows/macOS)
 
