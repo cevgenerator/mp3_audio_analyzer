@@ -7,8 +7,10 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <thread>
 
+#include "analysis_data.h"
 #include "fftw_wrapper.h"
 #include "ring_buffer.h"
 
@@ -18,7 +20,8 @@ class AnalysisThread {
   AnalysisThread();
   ~AnalysisThread();
 
-  bool Initialize(long sample_rate);
+  bool Initialize(long sample_rate,
+                  const std::shared_ptr<AnalysisData>& analysis_data);
 
   RingBuffer<float>& buffer();  // So producer can write into it.
 
@@ -29,16 +32,20 @@ class AnalysisThread {
   void CalculateStereoCorrelation();
   float CalculateBandwidth(const fftwf_complex* output) const;
   void CalculateAverageBandwidth();
+  void CalculateMagnitudes();
   void Run();
 
   std::thread thread_;
   std::atomic<bool> running_;
   RingBuffer<float> buffer_;
   std::vector<float> interleaved_;
-  FftwWrapper fft;
+  FftwWrapper fft_;
+  std::shared_ptr<AnalysisData> analysis_data_;
   int fft_count_ = 0;
-  float rms_ = 0.0F;
   float sample_rate_ = 0;
+  float rms_ = 0.0F;
   float bandwidth_ = 0.0F;
   float correlation_ = 0.0F;
+  std::array<float, analysis::kFftBinCount> spectrum_left_ = {};
+  std::array<float, analysis::kFftBinCount> spectrum_right_ = {};
 };

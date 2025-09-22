@@ -6,7 +6,6 @@
 #include "analysis_thread.h"
 
 #include <cmath>
-#include <iostream>
 
 #include "analysis_constants.h"
 
@@ -29,14 +28,16 @@ AnalysisThread::~AnalysisThread() {
   Stop();
 }
 
-bool AnalysisThread::Initialize(long sample_rate) {
+bool AnalysisThread::Initialize(
+    long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data) {
   sample_rate_ = static_cast<float>(sample_rate);  // For CalculateBandwidth().
+  analysis_data_ = analysis_data;
 
   if (!buffer_.Initialize(kRingBufferCapacity)) {
     return false;
   }
 
-  if (!fft.Initialize(analysis::kFftSize)) {
+  if (!fft_.Initialize(analysis::kFftSize)) {
     return false;
   }
 
@@ -68,8 +69,8 @@ void AnalysisThread::CalculateRms() {
   float rms_right = 0.0F;
 
   for (size_t i = 0; i < analysis::kFftSize; i++) {
-    rms_left += fft.input_left()[i] * fft.input_left()[i];
-    rms_right += fft.input_right()[i] * fft.input_right()[i];
+    rms_left += fft_.input_left()[i] * fft_.input_left()[i];
+    rms_right += fft_.input_right()[i] * fft_.input_right()[i];
   }
 
   rms_left = std::sqrt(rms_left / analysis::kFftSize);
@@ -83,7 +84,7 @@ void AnalysisThread::CalculateStereoCorrelation() {
   float correlation = 0.0F;
 
   for (size_t i = 0; i < analysis::kFftSize; ++i) {
-    correlation += fft.input_left()[i] * fft.input_right()[i];
+    correlation += fft_.input_left()[i] * fft_.input_right()[i];
   }
 
   correlation_ = correlation * kFftSizeInverse;
@@ -119,12 +120,29 @@ float AnalysisThread::CalculateBandwidth(const fftwf_complex* output) const {
 }
 
 // Calculates the average frequency bandwidth of 2 channels.
-// Must be called after fft.Execute().
+// Must be called after fft_.Execute().
 void AnalysisThread::CalculateAverageBandwidth() {
-  float bandwidth_left = CalculateBandwidth(fft.output_left());
-  float bandwidth_right = CalculateBandwidth(fft.output_right());
+  float bandwidth_left = CalculateBandwidth(fft_.output_left());
+  float bandwidth_right = CalculateBandwidth(fft_.output_right());
 
   bandwidth_ = (bandwidth_left + bandwidth_right) / analysis::kChannels;
+}
+
+// Must be called after fft_.Execute().
+void AnalysisThread::CalculateMagnitudes() {
+  for (size_t i = 0; i < analysis::kFftBinCount; ++i) {
+    float real_left = fft_.output_left()[i][0];
+    float imaginary_left = fft_.output_left()[i][1];
+
+    spectrum_left_[i] =
+        std::sqrt((real_left * real_left) + (imaginary_left * imaginary_left));
+
+    float real_right = fft_.output_right()[i][0];
+    float imaginary_right = fft_.output_right()[i][1];
+
+    spectrum_right_[i] = std::sqrt((real_right * real_right) +
+                                   (imaginary_right * imaginary_right));
+  }
 }
 
 void AnalysisThread::Run() {
@@ -138,33 +156,21 @@ void AnalysisThread::Run() {
 
     // Split the interleaved audio into two channels.
     for (size_t i = 0; i < kFrameCount; i++) {
-      fft.input_left()[i] = interleaved_[2 * i];  // Copy each left sample.
-      fft.input_right()[i] =
+      fft_.input_left()[i] = interleaved_[2 * i];  // Copy each left sample.
+      fft_.input_right()[i] =
           interleaved_[(2 * i) + 1];  // Copy each right sample.
     }
 
+    // Analyze audio.
+    fft_.Execute();
+
     CalculateRms();
     CalculateStereoCorrelation();
-
-    // Perform the FFT.
-    fft.Execute();
-
     CalculateAverageBandwidth();
+    CalculateMagnitudes();
 
-    // Only print about twice per second.
-    if (++fft_count_ % 43 == 0) {
-      // Use the FFT output data before the loop runs again.
-      // Print the second left and right bin to show FFTW is working.
-      const auto* bin_left = fft.output_left()[1];
-      const auto* bin_right = fft.output_right()[1];
-
-      std::cout << "FFT_L[1]: Re = " << bin_left[0] << ", Im = " << bin_left[1]
-                << "\n";
-      std::cout << "FFT_R[1]: Re = " << bin_right[0]
-                << ", Im = " << bin_right[1] << '\n';
-      std::cout << "RMS: " << rms_ << '\n';
-      std::cout << "Bandwidth: " << bandwidth_ << '\n';
-      std::cout << "Correlation: " << correlation_ << "\n\n";
-    }
+    // Copy results to analysis_data.
+    analysis_data_->Set(rms_, correlation_, bandwidth_, spectrum_left_,
+                        spectrum_right_);
   }
 }

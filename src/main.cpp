@@ -8,14 +8,19 @@
 #include <portaudio.h>
 
 #include <cstddef>
+#include <memory>
 #include <string>
 
+#include "analysis_data.h"
 #include "analysis_thread.h"
 #include "audio_output.h"
 #include "decoder.h"
 #include "error_handling.h"
 
 int main() {
+  // Create shared analysis data for communication between threads.
+  auto analysis_data = std::make_shared<AnalysisData>();
+
   // Initialize decoder with input file.
   Decoder decoder;
 
@@ -33,7 +38,7 @@ int main() {
   // Initialize analysis thread.
   AnalysisThread analysis_thread;
 
-  if (!analysis_thread.Initialize(decoder.sample_rate())) {
+  if (!analysis_thread.Initialize(decoder.sample_rate(), analysis_data)) {
     return 1;
   }
 
