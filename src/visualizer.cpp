@@ -12,11 +12,19 @@ bool Visualizer::Initialize(
     const std::shared_ptr<AnalysisData>& analysis_data) {
   analysis_data_ = analysis_data;
 
-  return true;
+  return glfw_.Initialize();
 }
 
+// Must be called after Initialize().
 void Visualizer::Run() {
-  // TODO: Add visualization logic.
+  while (glfwWindowShouldClose(glfw_.window()) == GLFW_FALSE) {
+    Update();
+
+    // TODO: Add visualization logic.
+
+    glfwSwapBuffers(glfw_.window());
+    glfwPollEvents();
+  }
 }
 
 void Visualizer::Update() {
