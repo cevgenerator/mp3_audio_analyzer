@@ -16,6 +16,7 @@
 #include "audio_output.h"
 #include "decoder.h"
 #include "error_handling.h"
+#include "visualizer.h"
 
 int main() {
   // Create shared analysis data for communication between threads.
@@ -65,6 +66,13 @@ int main() {
   // Check the reason the loop exited.
   if (decoder.mpg123_error() != MPG123_DONE &&
       !Mpg123Succeeded("Decoding", decoder.mpg123_error())) {
+    return 1;
+  }
+
+  // Initialize visualizer.
+  Visualizer visualizer;
+
+  if (!visualizer.Initialize(analysis_data)) {
     return 1;
   }
 

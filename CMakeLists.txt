@@ -35,15 +35,19 @@ find_package(MPG123 REQUIRED)
 find_package(PortAudio REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFTW REQUIRED fftw3f)
+pkg_check_modules(GLFW REQUIRED glfw3)
 
 # Source files
 set(SOURCES
+    src/analysis_data.cpp
     src/analysis_thread.cpp
     src/audio_output.cpp
     src/decoder.cpp
     src/error_handling.cpp
     src/fftw_wrapper.cpp
+    src/glfw_context.cpp
     src/main.cpp
+    src/visualizer.cpp
 )
 
 # Build executable
@@ -53,6 +57,7 @@ add_executable(mp3_analyzer ${SOURCES})
 target_link_libraries(mp3_analyzer
     PRIVATE
         ${FFTW_LIBRARIES}
+        ${GLFW_LIBRARIES}
         ${MPG123_LIBRARIES}
         ${PortAudio_LIBRARIES}
 )
@@ -61,8 +66,8 @@ target_link_libraries(mp3_analyzer
 target_include_directories(mp3_analyzer
   PRIVATE
     ${FFTW_INCLUDE_DIRS}
+    ${GLFW_INCLUDE_DIRS}
     ${MPG123_INCLUDE_DIRS}
     ${PortAudio_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-

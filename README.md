@@ -3,7 +3,7 @@
 **Language:** C++  
 **Version:** `v0.3.0`
 
-A real-time MP3 audio analyzer (in development) using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/) and [FFTW](https://fftw.org/).
+A real-time MP3 audio analyzer (in development) using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/), [FFTW](https://fftw.org/) and [GLFW](https://glfw.org/).
 
 Currently, the project plays back MP3 files while decoding them to raw PCM audio and performing a Fast Fourier Transform. Future versions will further analyze the audio data in real-time and output the results (e.g., for audio-reactive graphics).
 
@@ -27,7 +27,7 @@ Make sure you have the required development tools:
 
 ```bash
 sudo apt update
-sudo apt install cmake libmpg123-dev portaudio19-dev libfftw3-dev build-essential
+sudo apt install cmake libmpg123-dev portaudio19-dev libfftw3-dev libglfw3-dev build-essential
 ```
 
 Then from the project root:
@@ -74,6 +74,7 @@ cmake --build .
 - FFTW for the Fast Fourier Transform
 - libmpg123 for MP3 decoding
 - PortAudio for audio playback
+- GLFW for window creation
 - C++17-compatible compiler (e.g., g++, clang++)
 - Tested on Linux (Pop!_OS); Windows/macOS support planned
 
@@ -158,6 +159,7 @@ See LICENSE file for details.
 ### Third-party libraries
 
 - **FFTW** — licensed under the [GPL-2+](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+- **GLFW** — licensed under the [zlib/libpng license](https://www.zlib.net/zlib_license.html)
 - **mpg123** — licensed under the [LGPL 2.1+](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
 - **PortAudio** — licensed under the [MIT License](http://www.portaudio.com/license.html)
 
