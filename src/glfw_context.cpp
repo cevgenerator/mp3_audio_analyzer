@@ -34,11 +34,19 @@ bool GlfwContext::Initialize() {
   window_ = glfwCreateWindow(kWindowWidth, kWindowHeight, "MP3 Audio Analyzer",
                              nullptr, nullptr);
 
-  if (window_ != nullptr) {
-    glfwMakeContextCurrent(window_);
+  if (!Succeeded("Opening window", (window_ == nullptr))) {
+    return false;
   }
 
-  return Succeeded("Opening window", (window_ == nullptr));
+  glfwMakeContextCurrent(window_);
+
+  // Safe conversion to bool.
+  if (!Succeeded("Initializing GLAD",
+                 (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)))) {
+    return false;
+  }
+
+  return true;
 }
 
 GLFWwindow* GlfwContext::window() {

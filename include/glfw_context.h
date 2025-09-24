@@ -7,7 +7,11 @@
 
 #pragma once
 
+// Prevent clangd/clang-format from reordering these.
+// clang-format off
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
+// clang-format on
 
 class GlfwContext {
  public:
