@@ -14,6 +14,7 @@
 #include "analysis_data.h"
 #include "analysis_thread.h"
 #include "audio_output.h"
+#include "audio_pipeline.h"
 #include "decoder.h"
 #include "error_handling.h"
 #include "visualizer.h"
@@ -43,31 +44,10 @@ int main() {
     return 1;
   }
 
-  // ------------------------------
-  // Real time audio decoding and streaming
-  // ------------------------------
+  // Initialize AudioPipeline.
+  AudioPipeline audio_pipeline(decoder, audio_output, analysis_thread);
 
-  size_t bytes_read;
-
-  // This loop runs until the MP3 is fully decoded. The buffer contains
-  // bytes_read bytes of PCM data.
-  while (decoder.Read(bytes_read)) {
-    size_t frames = bytes_read / decoder.frame_size();
-
-    // Copy buffer to analysis thread.
-    if (!analysis_thread.buffer().Push(decoder.buffer_data(), frames * 2)) {
-      break;
-    }
-
-    // Copy buffer to audio output.
-    if (!audio_output.WriteStream(decoder.buffer_data(), frames)) break;
-  }
-
-  // Check the reason the loop exited.
-  if (decoder.mpg123_error() != MPG123_DONE &&
-      !Mpg123Succeeded("Decoding", decoder.mpg123_error())) {
-    return 1;
-  }
+  audio_pipeline.Start();
 
   // Initialize visualizer.
   Visualizer visualizer;
