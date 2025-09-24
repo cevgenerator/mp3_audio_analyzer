@@ -5,6 +5,9 @@
 
 #include "visualizer.h"
 
+#include <atomic>
+#include <iostream>
+
 Visualizer::Visualizer() {}
 Visualizer::~Visualizer() {}
 
@@ -16,11 +19,16 @@ bool Visualizer::Initialize(
 }
 
 // Must be called after Initialize().
-void Visualizer::Run() {
-  while (glfwWindowShouldClose(glfw_.window()) == GLFW_FALSE) {
+void Visualizer::Run(const std::atomic<bool>& running) {
+  while (glfwWindowShouldClose(glfw_.window()) == GLFW_FALSE && running) {
     Update();
 
     // TODO: Add visualization logic.
+    std::cout << "rms: " << rms_ << '\n';
+    std::cout << "corr: " << correlation_ << '\n';
+    std::cout << "band: " << bandwidth_ << '\n';
+    std::cout << "spec_l[1]: " << spectrum_left_[1] << '\n';
+    std::cout << "spec_r[1]: " << spectrum_right_[1] << '\n';
 
     glfwSwapBuffers(glfw_.window());
     glfwPollEvents();

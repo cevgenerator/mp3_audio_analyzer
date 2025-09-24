@@ -20,7 +20,7 @@ class Visualizer {
   ~Visualizer();
 
   bool Initialize(const std::shared_ptr<AnalysisData>& analysis_data);
-  void Run();
+  void Run(const std::atomic<bool>& running);
 
  private:
   void Update();
@@ -35,4 +35,5 @@ class Visualizer {
 
   // GLFW
   GlfwContext glfw_;
+  long count_ = 0;  // TESTING
 };

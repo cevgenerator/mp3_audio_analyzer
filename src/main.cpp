@@ -7,16 +7,13 @@
 #include <mpg123.h>
 #include <portaudio.h>
 
-#include <cstddef>
 #include <memory>
-#include <string>
 
 #include "analysis_data.h"
 #include "analysis_thread.h"
 #include "audio_output.h"
 #include "audio_pipeline.h"
 #include "decoder.h"
-#include "error_handling.h"
 #include "visualizer.h"
 
 int main() {
@@ -55,6 +52,8 @@ int main() {
   if (!visualizer.Initialize(analysis_data)) {
     return 1;
   }
+
+  visualizer.Run(audio_pipeline.running());
 
   return 0;
 }

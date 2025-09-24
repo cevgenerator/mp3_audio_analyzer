@@ -42,6 +42,7 @@ set(SOURCES
     src/analysis_data.cpp
     src/analysis_thread.cpp
     src/audio_output.cpp
+    src/audio_pipeline.cpp
     src/decoder.cpp
     src/error_handling.cpp
     src/fftw_wrapper.cpp

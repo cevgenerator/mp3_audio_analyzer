@@ -28,7 +28,7 @@ class AudioPipeline {
 
   void Start();
 
-  bool running() const;
+  const std::atomic<bool>& running() const;
 
  private:
   void Stop();

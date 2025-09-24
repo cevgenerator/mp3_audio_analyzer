@@ -24,7 +24,7 @@ void AudioPipeline::Start() {
   thread_ = std::thread(&AudioPipeline::Run, this);
 }
 
-bool AudioPipeline::running() const {
+const std::atomic<bool>& AudioPipeline::running() const {
   return running_;
 }
 
