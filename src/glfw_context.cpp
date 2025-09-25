@@ -8,13 +8,7 @@
 #include <GLFW/glfw3.h>
 
 #include "error_handling.h"
-
-namespace {
-
-constexpr int kWindowWidth = 1280;
-constexpr int kWindowHeight = 720;
-
-}  // namespace
+#include "window_constants.h"
 
 GlfwContext::GlfwContext() {}
 
@@ -31,20 +25,14 @@ bool GlfwContext::Initialize() {
     return false;
   }
 
-  window_ = glfwCreateWindow(kWindowWidth, kWindowHeight, "MP3 Audio Analyzer",
-                             nullptr, nullptr);
+  window_ = glfwCreateWindow(window::kWindowWidth, window::kWindowHeight,
+                             "MP3 Audio Analyzer", nullptr, nullptr);
 
   if (!Succeeded("Opening window", (window_ == nullptr))) {
     return false;
   }
 
   glfwMakeContextCurrent(window_);
-
-  // Safe conversion to bool.
-  if (!Succeeded("Initializing GLAD",
-                 (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)))) {
-    return false;
-  }
 
   return true;
 }

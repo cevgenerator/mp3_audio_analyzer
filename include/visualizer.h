@@ -24,6 +24,7 @@ class Visualizer {
 
  private:
   void Update();
+  bool InitializeOpenglState() const;
 
   // Visualizer data members
   std::shared_ptr<AnalysisData> analysis_data_;
@@ -35,5 +36,4 @@ class Visualizer {
 
   // GLFW
   GlfwContext glfw_;
-  long count_ = 0;  // TESTING
 };
