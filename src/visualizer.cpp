@@ -8,18 +8,6 @@
 #include <atomic>
 #include <iostream>
 
-#include "error_handling.h"
-#include "window_constants.h"
-
-namespace {
-
-constexpr float kClearColorR = 0.0F;
-constexpr float kClearColorG = 0.0F;
-constexpr float kClearColorB = 0.0F;
-constexpr float kClearColorA = 1.0F;
-
-}  // namespace
-
 Visualizer::Visualizer() {}
 Visualizer::~Visualizer() {}
 
@@ -27,7 +15,7 @@ bool Visualizer::Initialize(
     const std::shared_ptr<AnalysisData>& analysis_data) {
   analysis_data_ = analysis_data;
 
-  return glfw_.Initialize() && InitializeOpenglState();
+  return glfw_.Initialize() && Renderer::Initialize();
 }
 
 // Must only be called after Initialize().
@@ -50,27 +38,4 @@ void Visualizer::Run(const std::atomic<bool>& running) {
 void Visualizer::Update() {
   analysis_data_->Get(rms_, correlation_, bandwidth_, spectrum_left_,
                       spectrum_right_);
-}
-
-bool Visualizer::InitializeOpenglState() const {
-  // Safe conversion to bool.
-  if (!Succeeded("Initializing GLAD",
-                 (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)))) {
-    return false;
-  }
-
-  glViewport(0, 0, window::kWindowWidth, window::kWindowHeight);
-
-  // Set background to black.
-  glClearColor(kClearColorR, kClearColorG, kClearColorB, kClearColorA);
-
-  // Enable blending.
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  // Enable depth testing.
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LESS);
-
-  return true;
 }

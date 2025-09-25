@@ -29,7 +29,7 @@ Make sure you have the required development tools:
 
 ```bash
 sudo apt update
-sudo apt install cmake libmpg123-dev portaudio19-dev libfftw3-dev libglfw3-dev libgl1-mesa-dev build-essential
+sudo apt install cmake libmpg123-dev portaudio19-dev libfftw3-dev libglfw3-dev libgl1-mesa-dev libglm-dev build-essential
 ```
 
 Then from the project root:
@@ -77,6 +77,7 @@ cmake --build .
 - FFTW for the Fast Fourier Transform
 - GLAD (OpenGL function loader, included in source)
 - GLFW for window management
+- [GLM](https://github.com/g-truc/glm) (header-only math library)
 - libmpg123 for MP3 decoding
 - PortAudio for audio playback
 
@@ -170,6 +171,7 @@ The following libraries are not included in this repository, but are dynamically
 
 - **FFTW** — licensed under the [GPL-2+](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 - **GLFW** — licensed under the [zlib/libpng license](https://www.zlib.net/zlib_license.html)
+- **GLM** — licensed under the [MIT License](https://mit-license.org/)
 - **mpg123** — licensed under the [LGPL 2.1+](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
 - **PortAudio** — licensed under the [MIT License](http://www.portaudio.com/license.html)
 

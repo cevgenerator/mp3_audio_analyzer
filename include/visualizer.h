@@ -13,6 +13,7 @@
 
 #include "analysis_data.h"
 #include "glfw_context.h"
+#include "renderer.h"
 
 class Visualizer {
  public:
@@ -24,7 +25,6 @@ class Visualizer {
 
  private:
   void Update();
-  bool InitializeOpenglState() const;
 
   // Visualizer data members
   std::shared_ptr<AnalysisData> analysis_data_;
@@ -34,6 +34,7 @@ class Visualizer {
   std::array<float, analysis::kFftBinCount> spectrum_left_ = {};
   std::array<float, analysis::kFftBinCount> spectrum_right_ = {};
 
-  // GLFW
+  // Graphics
   GlfwContext glfw_;
+  Renderer renderer;
 };
