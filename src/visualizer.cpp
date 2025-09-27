@@ -23,7 +23,9 @@ void Visualizer::Run(const std::atomic<bool>& running) {
   while (glfwWindowShouldClose(glfw_.window()) == GLFW_FALSE && running) {
     Update();
 
-    // TODO: Add visualization logic.
+    renderer.Render();
+
+    // Print metrics.
     std::cout << "rms: " << rms_ << '\n';
     std::cout << "corr: " << correlation_ << '\n';
     std::cout << "band: " << bandwidth_ << '\n';

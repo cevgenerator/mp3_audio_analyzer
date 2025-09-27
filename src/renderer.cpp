@@ -21,13 +21,14 @@ constexpr float kClearColorG = 0.0F;
 constexpr float kClearColorB = 0.0F;
 constexpr float kClearColorA = 1.0F;
 
-constexpr float kOrthoMin = -1.0F;
-constexpr float kOrthoMax = 1.0F;
-
+constexpr float kBarColorR = 0.2F;
+constexpr int kBarVertices = 6;
 constexpr float kBarWidth = 0.05F;
 constexpr float kBarHeight = 0.8F;
 
 }  // namespace
+
+Renderer::Renderer() {}
 
 Renderer::~Renderer() {
   if (shader_program_ != 0) {
@@ -44,7 +45,7 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::Initialize() {
-  if (!Succeeded("Initializing OpenGL state", (InitializeOpenglState()))) {
+  if (!Succeeded("Initializing OpenGL state", (!InitializeOpenglState()))) {
     return false;
   }
 
@@ -57,6 +58,30 @@ bool Renderer::Initialize() {
   shader_program_ = *program;
 
   return Succeeded("Creating bar geometry", (!CreateBarGeometry()));
+}
+
+void Renderer::Render() const {
+  // Clear screen before drawing new frame.
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  glUseProgram(shader_program_);
+  glBindVertexArray(vao_);
+
+  // Set the color uniform.
+  GLint color_location = glGetUniformLocation(shader_program_, "color_uniform");
+  glUniform4f(color_location, kBarColorR, 0.0F, 1.0F, 1.0F);  // Working color.
+
+  // Set the projection matrix.
+  GLint projection_location =
+      glGetUniformLocation(shader_program_, "projection_matrix");
+  glm::mat4 projection = glm::ortho(-1.0F, 1.0F, -1.0F, 1.0F);
+  glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+
+  // Draw 6 vertices (2 triangles).
+  glDrawArrays(GL_TRIANGLES, 0, kBarVertices);
+
+  glBindVertexArray(0);
+  glUseProgram(0);
 }
 
 bool Renderer::InitializeOpenglState() {
@@ -78,12 +103,6 @@ bool Renderer::InitializeOpenglState() {
   // Enable depth testing.
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
-
-  // Define coordinate system.
-  glm::mat4 projection = glm::ortho(kOrthoMin, kOrthoMax,  // Left, right.
-                                    kOrthoMin, kOrthoMax,  // Bottom, top.
-                                    kOrthoMin, kOrthoMax   // Near, far.
-  );
 
   return true;
 }

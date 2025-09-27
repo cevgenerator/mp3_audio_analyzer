@@ -14,6 +14,7 @@ class Renderer {
   ~Renderer();
 
   bool Initialize();
+  void Render() const;
 
  private:
   static bool InitializeOpenglState();
