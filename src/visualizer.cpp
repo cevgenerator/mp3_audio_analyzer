@@ -15,7 +15,7 @@ bool Visualizer::Initialize(
     const std::shared_ptr<AnalysisData>& analysis_data) {
   analysis_data_ = analysis_data;
 
-  return glfw_.Initialize() && Renderer::Initialize();
+  return glfw_.Initialize() && renderer.Initialize();
 }
 
 // Must only be called after Initialize().
