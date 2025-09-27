@@ -6,10 +6,17 @@
 
 #pragma once
 
+#include <glad/gl.h>
+
 class Renderer {
  public:
   Renderer();
   ~Renderer();
 
-  static bool Initialize();
+  bool Initialize();
+
+ private:
+  static bool InitializeOpenglState();
+
+  GLuint shader_program_;
 };

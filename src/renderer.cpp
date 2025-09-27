@@ -5,16 +5,13 @@
 
 #include "renderer.h"
 
-// Prevent clangd/clang-format from reordering these.
-// clang-format off
-#include <glad/gl.h>
 #include <GLFW/glfw3.h>
-// clang-format on
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "error_handling.h"
+#include "shader_util.h"
 #include "window_constants.h"
 
 namespace {
@@ -30,6 +27,24 @@ constexpr float kOrthoMax = 1.0F;
 }  // namespace
 
 bool Renderer::Initialize() {
+  if (!Succeeded("Initializing OpenGL state", (InitializeOpenglState()))) {
+    return false;
+  }
+
+  auto program = CreateShaderProgram("shaders/bar.vert", "shaders/bar.frag");
+
+  if (!Succeeded("Creating shader program", (!program))) {
+    return false;
+  }
+
+  shader_program_ = *program;
+
+  // TODO: VAO/VBO setup
+
+  return true;
+}
+
+bool Renderer::InitializeOpenglState() {
   // Safe conversion to bool.
   if (!Succeeded("Initializing GLAD",
                  (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)))) {
