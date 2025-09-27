@@ -52,6 +52,8 @@ set(SOURCES
     src/fftw_wrapper.cpp
     src/glfw_context.cpp
     src/main.cpp
+    src/renderer.cpp
+    src/shader_util.cpp
     src/visualizer.cpp
 )
 
@@ -82,3 +84,6 @@ target_include_directories(mp3_analyzer
     ${PortAudio_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+# Copy shaders into the build directory
+file(COPY shaders DESTINATION ${CMAKE_BINARY_DIR})

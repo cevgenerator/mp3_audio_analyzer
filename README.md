@@ -103,6 +103,7 @@ project-root/
 ├── assets/
 ├── cmake/
 ├── include/
+├── shaders/
 ├── src/
 ├── tests/
 ├── third_party_licenses/
