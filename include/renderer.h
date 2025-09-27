@@ -17,6 +17,9 @@ class Renderer {
 
  private:
   static bool InitializeOpenglState();
+  bool CreateBarGeometry();
 
-  GLuint shader_program_;
+  GLuint shader_program_ = 0;
+  GLuint vao_ = 0;
+  GLuint vbo_ = 0;
 };
