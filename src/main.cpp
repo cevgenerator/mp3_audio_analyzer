@@ -49,7 +49,7 @@ int main() {
   // Initialize visualizer.
   Visualizer visualizer;
 
-  if (!visualizer.Initialize(analysis_data)) {
+  if (!visualizer.Initialize(decoder.sample_rate(), analysis_data)) {
     return 1;
   }
 

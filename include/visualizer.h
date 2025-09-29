@@ -20,21 +20,11 @@ class Visualizer {
   Visualizer();
   ~Visualizer();
 
-  bool Initialize(const std::shared_ptr<AnalysisData>& analysis_data);
+  bool Initialize(long sample_rate,
+                  const std::shared_ptr<AnalysisData>& analysis_data);
   void Run(const std::atomic<bool>& running);
 
  private:
-  void Update();
-
-  // Visualizer data members
-  std::shared_ptr<AnalysisData> analysis_data_;
-  float rms_ = 0.0F;
-  float bandwidth_ = 0.0F;
-  float correlation_ = 0.0F;
-  std::array<float, analysis::kFftBinCount> spectrum_left_ = {};
-  std::array<float, analysis::kFftBinCount> spectrum_right_ = {};
-
-  // Graphics
   GlfwContext glfw_;
   Renderer renderer;
 };

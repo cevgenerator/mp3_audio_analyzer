@@ -7,7 +7,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "error_handling.h"
@@ -21,10 +20,9 @@ constexpr float kClearColorG = 0.0F;
 constexpr float kClearColorB = 0.0F;
 constexpr float kClearColorA = 1.0F;
 
-constexpr float kBarColorR = 0.2F;
 constexpr int kBarVertices = 6;
 constexpr float kBarWidth = 0.05F;
-constexpr float kBarHeight = 0.8F;
+constexpr float kBarHeight = 2.0F / analysis::kFftBinCount;
 
 }  // namespace
 
@@ -44,7 +42,11 @@ Renderer::~Renderer() {
   }
 }
 
-bool Renderer::Initialize() {
+bool Renderer::Initialize(long sample_rate,
+                          const std::shared_ptr<AnalysisData>& analysis_data) {
+  sample_rate_ = static_cast<float>(sample_rate);
+  analysis_data_ = analysis_data;
+
   if (!Succeeded("Initializing OpenGL state", (!InitializeOpenglState()))) {
     return false;
   }
@@ -57,37 +59,59 @@ bool Renderer::Initialize() {
 
   shader_program_ = *program;
 
-  return Succeeded("Creating bar geometry", (!CreateBarGeometry()));
+  if (!Succeeded("Storing shader program", (shader_program_ == 0))) {
+    return false;
+  }
+
+  if (!Succeeded("Creating bar geometry", (!CreateBarGeometry()))) {
+    return false;
+  };
+
+  model_location_ = glGetUniformLocation(shader_program_, "model");
+
+  if (!Succeeded("Getting model uniform location", (model_location_ == -1))) {
+    return false;
+  }
+
+  projection_matrix_ = glm::ortho(-1.0F, 1.0F, -1.0F, 1.0F);
+  projection_location_ = glGetUniformLocation(shader_program_, "projection");
+
+  if (!Succeeded("Getting projection uniform location",
+                 (projection_location_ == -1))) {
+    return false;
+  }
+
+  color_location_ = glGetUniformLocation(shader_program_, "color_uniform");
+
+  return Succeeded("Getting color uniform location", (color_location_ == -1));
 }
 
-void Renderer::Render() const {
+void Renderer::Render() {
   // Clear screen before drawing new frame.
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   glUseProgram(shader_program_);
   glBindVertexArray(vao_);
 
-  // Set the color uniform.
-  GLint color_location = glGetUniformLocation(shader_program_, "color_uniform");
-  glUniform4f(color_location, kBarColorR, 0.0F, 1.0F, 1.0F);  // Working color.
-
   // Set the projection matrix.
-  GLint projection_location =
-      glGetUniformLocation(shader_program_, "projection_matrix");
-  glm::mat4 projection = glm::ortho(-1.0F, 1.0F, -1.0F, 1.0F);
-  glUniformMatrix4fv(projection_location, 1, GL_FALSE, &projection[0][0]);
+  glUniformMatrix4fv(projection_location_, 1, GL_FALSE,
+                     &projection_matrix_[0][0]);  // Send as uniform.
 
-  // Draw 6 vertices (2 triangles).
-  glDrawArrays(GL_TRIANGLES, 0, kBarVertices);
+  // Get analysis data.
+  Update();
+
+  // Draw a bar for each bin.
+  for (size_t i = 0; i < analysis::kFftBinCount; ++i) {
+    RenderBar(i, spectrum_left_[i], true);
+    RenderBar(i, spectrum_right_[i], false);
+  }
 
   glBindVertexArray(0);
   glUseProgram(0);
 }
 
 bool Renderer::InitializeOpenglState() {
-  // Safe conversion to bool.
   if (!Succeeded("Initializing GLAD",
-                 (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)))) {
+                 (gladLoadGL((GLADloadfunc)glfwGetProcAddress)) == 0)) {
     return false;
   }
 
@@ -105,6 +129,11 @@ bool Renderer::InitializeOpenglState() {
   glDepthFunc(GL_LESS);
 
   return true;
+}
+
+void Renderer::Update() {
+  analysis_data_->Get(rms_, correlation_, bandwidth_, spectrum_left_,
+                      spectrum_right_);
 }
 
 bool Renderer::CreateBarGeometry() {
@@ -153,4 +182,37 @@ bool Renderer::CreateBarGeometry() {
   glBindVertexArray(0);
 
   return (vao_ != 0) && (vbo_ != 0);
+}
+
+// index and magnitude are clearly named, and this function is only used
+// internally.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void Renderer::RenderBar(size_t index, float magnitude, bool is_left) const {
+  // Compute vertical position based on index.
+  float vertical_position = (kBarHeight * static_cast<float>(index)) - 1.0F;
+
+  // Compute width based on magnitude.
+  float width = magnitude;
+
+  // Apply direction (left/right).
+  if (is_left) {
+    width *= -1.0F;
+  }
+
+  // Build the model matrix.
+  glm::mat4 model = glm::mat4(1.0F);  // Identity.
+  model = glm::translate(model, glm::vec3(0.0F, vertical_position, 0.0F));
+  model = glm::scale(model,
+                     glm::vec3(width, 1.0F, 1.0F));  // Horizontal scale only.
+
+  // Set the model location.
+  glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
+
+  // Set the color uniform.
+  float color_value =
+      (1.0F / analysis::kFftBinCount) * static_cast<float>(index);
+  glUniform4f(color_location_, color_value, 0.0F, 1 - color_value, 1.0F);
+
+  // Draw 6 vertices (2 triangles).
+  glDrawArrays(GL_TRIANGLES, 0, kBarVertices);
 }

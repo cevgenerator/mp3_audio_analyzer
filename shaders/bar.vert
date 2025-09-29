@@ -10,9 +10,12 @@
 // Declare vertex position attribute.
 layout(location = 0) in vec2 vertex_position;
 
+// Transform matrix for bar instance (position, size).
+uniform mat4 model;
+
 // Declare projection matrix uniform.
-uniform mat4 projection_matrix;
+uniform mat4 projection;
 
 void main() {
-    gl_Position = projection_matrix * vec4(vertex_position, 0.0, 1.0);
+    gl_Position = projection * model * vec4(vertex_position, 0.0, 1.0);
 }
