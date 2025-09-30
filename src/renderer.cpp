@@ -20,9 +20,16 @@ constexpr float kClearColorG = 0.0F;
 constexpr float kClearColorB = 0.0F;
 constexpr float kClearColorA = 1.0F;
 
-constexpr int kBarVertices = 6;
+constexpr int kRectangleVertices = 6;
+
+constexpr float kVerticalRange = 2.0F;  // From -1.0F to 1.0F.
 constexpr float kBarWidth = 0.05F;
-constexpr float kBarHeight = 2.0F / analysis::kFftBinCount;
+constexpr float kBarHeight = kVerticalRange / analysis::kFftBinCount;
+constexpr float kBarAlphaOffset = 0.1F;
+
+constexpr float kApproxMaxBandwith = 20000.0F;
+constexpr float kBandwidthScaleFactor = 1.5F;
+constexpr float kCorrelationScaleFactor = 2.0F;
 
 }  // namespace
 
@@ -33,12 +40,20 @@ Renderer::~Renderer() {
     glDeleteProgram(shader_program_);
   }
 
-  if (vbo_ != 0) {
-    glDeleteBuffers(1, &vbo_);
+  if (bar_vbo_ != 0) {
+    glDeleteBuffers(1, &bar_vbo_);
   }
 
-  if (vao_ != 0) {
-    glDeleteVertexArrays(1, &vao_);
+  if (bar_vao_ != 0) {
+    glDeleteVertexArrays(1, &bar_vao_);
+  }
+
+  if (diamond_vbo_ != 0) {
+    glDeleteBuffers(1, &diamond_vbo_);
+  }
+
+  if (diamond_vao_ != 0) {
+    glDeleteVertexArrays(1, &diamond_vao_);
   }
 }
 
@@ -65,7 +80,11 @@ bool Renderer::Initialize(long sample_rate,
 
   if (!Succeeded("Creating bar geometry", (!CreateBarGeometry()))) {
     return false;
-  };
+  }
+
+  if (!Succeeded("Creating diamond geometry", (!CreateDiamondGeometry()))) {
+    return false;
+  }
 
   model_location_ = glGetUniformLocation(shader_program_, "model");
 
@@ -90,7 +109,6 @@ void Renderer::Render() {
   // Clear screen before drawing new frame.
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glUseProgram(shader_program_);
-  glBindVertexArray(vao_);
 
   // Set the projection matrix.
   glUniformMatrix4fv(projection_location_, 1, GL_FALSE,
@@ -100,10 +118,15 @@ void Renderer::Render() {
   Update();
 
   // Draw a bar for each bin.
+  glBindVertexArray(bar_vao_);
   for (size_t i = 0; i < analysis::kFftBinCount; ++i) {
     RenderBar(i, spectrum_left_[i], true);
     RenderBar(i, spectrum_right_[i], false);
   }
+
+  // Draw diamond.
+  glBindVertexArray(diamond_vao_);
+  RenderDiamond(rms_, correlation_, bandwidth_);
 
   glBindVertexArray(0);
   glUseProgram(0);
@@ -147,18 +170,14 @@ bool Renderer::CreateBarGeometry() {
       kBarHeight,     -kBarWidth / 2, 0.0F,
   };
 
-  // Create and bind VAO and VBO.
-  GLuint vao;
-  GLuint vbo;
-
-  glGenVertexArrays(1, &vao);
-  glGenBuffers(1, &vbo);
+  glGenVertexArrays(1, &bar_vao_);
+  glGenBuffers(1, &bar_vbo_);
 
   // Bind the VAO. All following vertex format/state settings are stored in it.
-  glBindVertexArray(vao);
+  glBindVertexArray(bar_vao_);
 
   // Upload vertex data to VBO.
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, bar_vbo_);
   glBufferData(GL_ARRAY_BUFFER, sizeof(bar_vertices), bar_vertices,
                GL_STATIC_DRAW);
 
@@ -173,15 +192,11 @@ bool Renderer::CreateBarGeometry() {
   );
   glEnableVertexAttribArray(0);  // Link buffer data to shader input.
 
-  // Assign.
-  vao_ = vao;
-  vbo_ = vbo;
-
   // Unbind.
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  return (vao_ != 0) && (vbo_ != 0);
+  return (bar_vao_ != 0) && (bar_vbo_ != 0);
 }
 
 // index and magnitude are clearly named, and this function is only used
@@ -211,8 +226,73 @@ void Renderer::RenderBar(size_t index, float magnitude, bool is_left) const {
   // Set the color uniform.
   float color_value =
       (1.0F / analysis::kFftBinCount) * static_cast<float>(index);
-  glUniform4f(color_location_, color_value, 0.0F, 1 - color_value, 1.0F);
+  glUniform4f(color_location_, color_value, color_value, 1.0F,
+              color_value + kBarAlphaOffset);
 
   // Draw 6 vertices (2 triangles).
-  glDrawArrays(GL_TRIANGLES, 0, kBarVertices);
+  glDrawArrays(GL_TRIANGLES, 0, kRectangleVertices);
+}
+
+bool Renderer::CreateDiamondGeometry() {
+  // 2 triangles forming a diamond shape centered on origin.
+  float diamond_vertices[] = {
+      // x, y
+      -1.0F, 0.0F, 0.0F, 1.0F,  1.0F,  0.0F,
+
+      1.0F,  0.0F, 0.0F, -1.0F, -1.0F, 0.0F,
+  };
+
+  glGenVertexArrays(1, &diamond_vao_);
+  glGenBuffers(1, &diamond_vbo_);
+
+  // Bind the VAO. All following vertex format/state settings are stored in it.
+  glBindVertexArray(diamond_vao_);
+
+  // Upload vertex data to VBO.
+  glBindBuffer(GL_ARRAY_BUFFER, diamond_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(diamond_vertices), diamond_vertices,
+               GL_STATIC_DRAW);
+
+  // Describe vertex layout.
+  glVertexAttribPointer(
+      0,         // Attribute index (matches layout(location = 0) in shader).
+      2,         // Components per vertex attribute (x and y).
+      GL_FLOAT,  // Type.
+      GL_FALSE,  // Normalize.
+      2 * sizeof(float),  // Stride (bytes between vertices).
+      (void*)0            // Offset.
+  );
+  glEnableVertexAttribArray(0);  // Link buffer data to shader input.
+
+  // Unbind.
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  return (diamond_vao_ != 0) && (diamond_vbo_ != 0);
+}
+
+// rms, correlation and bandwidth are clearly named, and this function is only
+// used internally.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void Renderer::RenderDiamond(float rms, float correlation,
+                             float bandwidth) const {
+  // Compute height based on bandwidth.
+  float height = (bandwidth / kApproxMaxBandwith) / kBandwidthScaleFactor;
+
+  // Compute width based on correlation.
+  float width = correlation * kCorrelationScaleFactor;
+
+  // Build the model matrix.
+  glm::mat4 model = glm::mat4(1.0F);  // Identity.
+  model = glm::scale(
+      model, glm::vec3(width, height, 1.0F));  // Horizontal and vertical scale.
+
+  // Set the model location.
+  glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
+
+  // Set the color uniform.
+  glUniform4f(color_location_, rms / kBandwidthScaleFactor, 0.0F, rms, 1.0F);
+
+  // Draw 6 vertices (2 triangles).
+  glDrawArrays(GL_TRIANGLES, 0, kRectangleVertices);
 }

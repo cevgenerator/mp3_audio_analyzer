@@ -27,8 +27,9 @@ class Renderer {
   static bool InitializeOpenglState();
   void Update();
   bool CreateBarGeometry();
+  bool CreateDiamondGeometry();
   void RenderBar(size_t index, float magnitude, bool is_left) const;
-
+  void RenderDiamond(float rms, float correlation, float bandwidth) const;
   float sample_rate_ = 0;
 
   // Graphics
@@ -37,8 +38,10 @@ class Renderer {
   GLint color_location_ = 0;
   GLint projection_location_ = 0;
   GLuint shader_program_ = 0;
-  GLuint vao_ = 0;
-  GLuint vbo_ = 0;
+  GLuint bar_vao_ = 0;
+  GLuint bar_vbo_ = 0;
+  GLuint diamond_vao_ = 0;
+  GLuint diamond_vbo_ = 0;
 
   // Audio metrics
   std::shared_ptr<AnalysisData> analysis_data_;
