@@ -15,21 +15,25 @@
 
 namespace {
 
-constexpr float kClearColorR = 0.0F;
-constexpr float kClearColorG = 0.0F;
-constexpr float kClearColorB = 0.0F;
-constexpr float kClearColorA = 1.0F;
-
 constexpr int kRectangleVertices = 6;
 
+// FFT bars
 constexpr float kVerticalRange = 2.0F;  // From -1.0F to 1.0F.
 constexpr float kBarWidth = 0.05F;
-constexpr float kBarHeight = kVerticalRange / analysis::kFftBinCount;
+constexpr float kBarHeight = kVerticalRange / kNumBands;
 constexpr float kBarAlphaOffset = 0.1F;
 
-constexpr float kApproxMaxBandwith = 20000.0F;
+// Diamond shape
+constexpr float kUpperBandEdge = 20000.0F;
 constexpr float kBandwidthScaleFactor = 1.5F;
 constexpr float kCorrelationScaleFactor = 2.0F;
+
+// Bin to band mapping
+constexpr float kLowerBandEdge = 20.0F;
+constexpr float kLogBase10 = 10.0F;
+constexpr std::array<float, 7> kSmoothingKernel = {0.05F, 0.1F, 0.2F, 0.3F,
+                                                   0.2F,  0.1F, 0.05F};
+constexpr int kKernelRadius = 3;  // 7-point kernel: radius 3.
 
 }  // namespace
 
@@ -61,6 +65,10 @@ bool Renderer::Initialize(long sample_rate,
                           const std::shared_ptr<AnalysisData>& analysis_data) {
   sample_rate_ = static_cast<float>(sample_rate);
   analysis_data_ = analysis_data;
+
+  if (!Succeeded("Building bin-to-band mapping", (!BuildBinToBandMapping()))) {
+    return false;
+  }
 
   if (!Succeeded("Initializing OpenGL state", (!InitializeOpenglState()))) {
     return false;
@@ -117,11 +125,11 @@ void Renderer::Render() {
   // Get analysis data.
   Update();
 
-  // Draw a bar for each bin.
+  // Draw a bar for each band.
   glBindVertexArray(bar_vao_);
-  for (size_t i = 0; i < analysis::kFftBinCount; ++i) {
-    RenderBar(i, spectrum_left_[i], true);
-    RenderBar(i, spectrum_right_[i], false);
+  for (size_t i = 0; i < kNumBands; ++i) {
+    RenderBar(i, band_magnitudes_left_[i], true);
+    RenderBar(i, band_magnitudes_right_[i], false);
   }
 
   // Draw diamond.
@@ -141,7 +149,7 @@ bool Renderer::InitializeOpenglState() {
   glViewport(0, 0, window::kWindowWidth, window::kWindowHeight);
 
   // Set background to black.
-  glClearColor(kClearColorR, kClearColorG, kClearColorB, kClearColorA);
+  glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
 
   // Enable blending.
   glEnable(GL_BLEND);
@@ -157,6 +165,124 @@ bool Renderer::InitializeOpenglState() {
 void Renderer::Update() {
   analysis_data_->Get(rms_, correlation_, bandwidth_, spectrum_left_,
                       spectrum_right_);
+
+  // Clear band_magnitudes_.
+  band_magnitudes_left_.fill(0.0F);
+  band_magnitudes_right_.fill(0.0F);
+
+  // Aggregate bins per band.
+  std::array<size_t, kNumBands> bin_counts = {};
+
+  for (size_t bin = 0; bin < analysis::kFftBinCount; ++bin) {
+    size_t band = bin_to_band_[bin];
+
+    band_magnitudes_left_[band] += spectrum_left_[bin];
+    band_magnitudes_right_[band] += spectrum_right_[bin];
+    bin_counts[band]++;
+  }
+
+  // Normalize.
+  for (size_t band = 0; band < kNumBands; ++band) {
+    if (bin_counts[band] > 0) {
+      band_magnitudes_left_[band] /= static_cast<float>(bin_counts[band]);
+      band_magnitudes_right_[band] /= static_cast<float>(bin_counts[band]);
+    }
+  }
+
+  SmoothBandMagnitudes();
+}
+
+void Renderer::SmoothBandMagnitudes() {
+  std::array<float, kNumBands> smoothed_left = {};
+  std::array<float, kNumBands> smoothed_right = {};
+
+  for (size_t i = 0; i < kNumBands; ++i) {
+    float weighted_sum_left = 0.0F;
+    float weighted_sum_right = 0.0F;
+    float total_weight = 0.0F;  // Actual used weight (important at edges).
+
+    // Apply kernel.
+    for (int offset = -kKernelRadius; offset <= kKernelRadius; ++offset) {
+      int neighbor_index = static_cast<int>(i) + offset;  // Which band.
+
+      // Clamp to valid index range.
+      if (neighbor_index >= 0 && neighbor_index < static_cast<int>(kNumBands)) {
+        // Find corresponding weight for current band.
+        float weight = kSmoothingKernel[offset + kKernelRadius];
+
+        // Add weighted neighbour magnitude to sum.
+        weighted_sum_left += band_magnitudes_left_[neighbor_index] * weight;
+        weighted_sum_right += band_magnitudes_right_[neighbor_index] * weight;
+        total_weight += weight;
+      }
+    }
+
+    // Normalize (important at edges where total_weight < 1).
+    smoothed_left[i] = weighted_sum_left / total_weight;
+    smoothed_right[i] = weighted_sum_right / total_weight;
+  }
+
+  // Overwrite original magnitudes.
+  band_magnitudes_left_ = smoothed_left;
+  band_magnitudes_right_ = smoothed_right;
+}
+
+bool Renderer::BuildBinToBandMapping() {
+  if (!Succeeded("Validating sample rate", (sample_rate_ <= 0.0F))) {
+    return false;
+  }
+
+  // Calculate bin frequencies.
+  for (size_t i = 0; i < analysis::kFftBinCount; ++i) {
+    bin_frequencies_[i] =
+        static_cast<float>(i) * sample_rate_ / analysis::kFftSize;
+  }
+
+  // Define frequency range edges.
+  float min_freq = kLowerBandEdge;
+  float max_freq = sample_rate_ / 2;  // Nyquist.
+
+  if (!Succeeded("Validating range edges", (min_freq >= max_freq))) {
+    return false;
+  }
+
+  // Compute logarithmically spaced frequency range edges.
+  float log_min = std::log10(min_freq);
+  float log_max = std::log10(max_freq);
+
+  // Compute logarithmically spaced band edges.
+  for (size_t i = 0; i <= kNumBands; ++i) {
+    // Convert i to normalized value (0.0 to 1.0).
+    float normalized_edge_position = static_cast<float>(i) / kNumBands;
+
+    // Interpolate evenly in log space and convert back to linear frequency.
+    float freq = std::pow(
+        kLogBase10, log_min + (normalized_edge_position * (log_max - log_min)));
+
+    band_edges_[i] = freq;
+  }
+
+  // Pre-compute bin-to-band mappings.
+  for (size_t bin = 0; bin < analysis::kFftBinCount; ++bin) {
+    float freq = bin_frequencies_[bin];
+
+    // Find the first band edge that this freq is less than.
+    bool matched = false;
+
+    for (size_t band = 0; band < kNumBands; ++band) {
+      if (freq < band_edges_[band + 1]) {
+        bin_to_band_[bin] = band;
+        matched = true;
+        break;
+      }
+    }
+
+    if (!Succeeded("Matching bins to bands", (!matched))) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool Renderer::CreateBarGeometry() {
@@ -219,13 +345,15 @@ void Renderer::RenderBar(size_t index, float magnitude, bool is_left) const {
   model = glm::translate(model, glm::vec3(0.0F, vertical_position, 0.0F));
   model = glm::scale(model,
                      glm::vec3(width, 1.0F, 1.0F));  // Horizontal scale only.
+  // Translate bar to shift origin so it grows from center.
+  model = glm::translate(model, glm::vec3(kBarWidth / 2, 0.0F, 0.0F));
 
   // Set the model location.
   glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
 
   // Set the color uniform.
-  float color_value =
-      (1.0F / analysis::kFftBinCount) * static_cast<float>(index);
+  float color_value = static_cast<float>(index) / static_cast<float>(kNumBands);
+
   glUniform4f(color_location_, color_value, color_value, 1.0F,
               color_value + kBarAlphaOffset);
 
@@ -277,7 +405,7 @@ bool Renderer::CreateDiamondGeometry() {
 void Renderer::RenderDiamond(float rms, float correlation,
                              float bandwidth) const {
   // Compute height based on bandwidth.
-  float height = (bandwidth / kApproxMaxBandwith) / kBandwidthScaleFactor;
+  float height = (bandwidth / kUpperBandEdge) / kBandwidthScaleFactor;
 
   // Compute width based on correlation.
   float width = correlation * kCorrelationScaleFactor;

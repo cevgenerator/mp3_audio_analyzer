@@ -11,8 +11,15 @@
 #include <cstddef>
 #include <glm/glm.hpp>
 #include <memory>
+#include <vector>
 
 #include "analysis_data.h"
+
+namespace {
+
+constexpr size_t kNumBands = 32;
+
+}  // namespace
 
 class Renderer {
  public:
@@ -26,10 +33,13 @@ class Renderer {
  private:
   static bool InitializeOpenglState();
   void Update();
+  void SmoothBandMagnitudes();
+  bool BuildBinToBandMapping();
   bool CreateBarGeometry();
   bool CreateDiamondGeometry();
   void RenderBar(size_t index, float magnitude, bool is_left) const;
   void RenderDiamond(float rms, float correlation, float bandwidth) const;
+
   float sample_rate_ = 0;
 
   // Graphics
@@ -50,5 +60,12 @@ class Renderer {
   float correlation_ = 0.0F;
   std::array<float, analysis::kFftBinCount> spectrum_left_ = {};
   std::array<float, analysis::kFftBinCount> spectrum_right_ = {};
+
+  // Bin to band mapping
   std::array<float, analysis::kFftBinCount> bin_frequencies_ = {};
+  std::vector<float> band_edges_ = std::vector<float>(kNumBands + 1, 0.0F);
+  std::vector<size_t> bin_to_band_ =
+      std::vector<size_t>(analysis::kFftBinCount, 0);
+  std::array<float, kNumBands> band_magnitudes_left_ = {};
+  std::array<float, kNumBands> band_magnitudes_right_ = {};
 };
