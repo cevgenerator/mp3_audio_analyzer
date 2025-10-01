@@ -15,18 +15,41 @@
 
 namespace {
 
-constexpr int kRectangleVertices = 6;
+// Vertices
+constexpr int kNumRectangleVertices = 6;
+constexpr int kNumLineVertices = 4;
+
+// Outlines
+constexpr float kOutlineColorValue = 0.5F;
+constexpr float kOutlineWidth = 3.0F;
+
+// Spacing
+constexpr float kHorizontalRange = 0.8F;
+constexpr float kHorizontalMargin = (1.0F - kHorizontalRange) / 2.0F;
+constexpr float kVerticalRange = kHorizontalRange;
+constexpr float kVerticalMargin = kHorizontalMargin;
 
 // FFT bars
-constexpr float kVerticalRange = 2.0F;  // From -1.0F to 1.0F.
-constexpr float kBarWidth = 0.05F;
-constexpr float kBarHeight = kVerticalRange / kNumBands;
+constexpr float kBarWidth = kHorizontalRange / kNumBands;
+constexpr float kBarHeight = 0.05F;
 constexpr float kBarAlphaOffset = 0.1F;
+
+// RMS bar
+constexpr float kRmsBarScaleFactor = 28.0F;
+constexpr float kRmsBarColorValue = 0.5F;
 
 // Diamond shape
 constexpr float kUpperBandEdge = 20000.0F;
-constexpr float kBandwidthScaleFactor = 1.5F;
-constexpr float kCorrelationScaleFactor = 2.0F;
+constexpr float kBandwidthScaleFactor = 3.0F;
+constexpr float kCorrelationScaleFactor = 0.8F;
+constexpr float kColorScaleFactor = 1.5F;
+constexpr float kTranslationFactor = -0.5F;
+
+// Lines
+constexpr float kLineWidth = 0.015F;
+constexpr float kLineColorValue = 0.25F;
+constexpr float kLineAngle = 90.0F;
+constexpr float kLineRotationScaleFactor = 1.75F;
 
 // Bin to band mapping
 constexpr float kLowerBandEdge = 20.0F;
@@ -58,6 +81,14 @@ Renderer::~Renderer() {
 
   if (diamond_vao_ != 0) {
     glDeleteVertexArrays(1, &diamond_vao_);
+  }
+
+  if (line_vbo_ != 0) {
+    glDeleteBuffers(1, &line_vbo_);
+  }
+
+  if (line_vao_ != 0) {
+    glDeleteVertexArrays(1, &line_vao_);
   }
 }
 
@@ -91,6 +122,10 @@ bool Renderer::Initialize(long sample_rate,
   }
 
   if (!Succeeded("Creating diamond geometry", (!CreateDiamondGeometry()))) {
+    return false;
+  }
+
+  if (!Succeeded("Creating Line Geometry", (!CreateLineGeometry()))) {
     return false;
   }
 
@@ -132,13 +167,24 @@ void Renderer::Render() {
     RenderBar(i, band_magnitudes_right_[i], false);
   }
 
+  // Draw RMS bar.
+  RenderRmsBar(rms_);
+
   // Draw diamond.
   glBindVertexArray(diamond_vao_);
   RenderDiamond(rms_, correlation_, bandwidth_);
 
+  // Draw lines.
+  glBindVertexArray(line_vao_);
+  RenderGraphOverlay();
+
   glBindVertexArray(0);
   glUseProgram(0);
 }
+
+// ----------------------
+// Private methods
+// ----------------------
 
 bool Renderer::InitializeOpenglState() {
   if (!Succeeded("Initializing GLAD",
@@ -166,6 +212,11 @@ void Renderer::Update() {
   analysis_data_->Get(rms_, correlation_, bandwidth_, spectrum_left_,
                       spectrum_right_);
 
+  AggregateBins();
+  SmoothBandMagnitudes();
+}
+
+void Renderer::AggregateBins() {
   // Clear band_magnitudes_.
   band_magnitudes_left_.fill(0.0F);
   band_magnitudes_right_.fill(0.0F);
@@ -188,8 +239,6 @@ void Renderer::Update() {
       band_magnitudes_right_[band] /= static_cast<float>(bin_counts[band]);
     }
   }
-
-  SmoothBandMagnitudes();
 }
 
 void Renderer::SmoothBandMagnitudes() {
@@ -285,15 +334,17 @@ bool Renderer::BuildBinToBandMapping() {
   return true;
 }
 
+// ----------------------
+// Bar shape methods
+// ----------------------
+
 bool Renderer::CreateBarGeometry() {
   // 2 triangles forming a vertical bar centered on origin.
   float bar_vertices[] = {
       // x, y
-      -kBarWidth / 2, 0.0F,           kBarWidth / 2,
-      0.0F,           kBarWidth / 2,  kBarHeight,
+      0.0F,      0.0F,       kBarWidth, 0.0F,       kBarWidth, kBarHeight,
 
-      kBarWidth / 2,  kBarHeight,     -kBarWidth / 2,
-      kBarHeight,     -kBarWidth / 2, 0.0F,
+      kBarWidth, kBarHeight, 0.0F,      kBarHeight, 0.0F,      0.0F,
   };
 
   glGenVertexArrays(1, &bar_vao_);
@@ -329,24 +380,24 @@ bool Renderer::CreateBarGeometry() {
 // internally.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Renderer::RenderBar(size_t index, float magnitude, bool is_left) const {
-  // Compute vertical position based on index.
-  float vertical_position = (kBarHeight * static_cast<float>(index)) - 1.0F;
+  // Compute horizontal position based on index.
+  float horizontal_position =
+      (kBarWidth * static_cast<float>(index)) + kHorizontalMargin;
 
   // Compute width based on magnitude.
-  float width = magnitude;
+  float height = magnitude;
 
-  // Apply direction (left/right).
+  // Shift left bands.
   if (is_left) {
-    width *= -1.0F;
+    horizontal_position -= 1.0F;
   }
 
   // Build the model matrix.
   glm::mat4 model = glm::mat4(1.0F);  // Identity.
-  model = glm::translate(model, glm::vec3(0.0F, vertical_position, 0.0F));
-  model = glm::scale(model,
-                     glm::vec3(width, 1.0F, 1.0F));  // Horizontal scale only.
-  // Translate bar to shift origin so it grows from center.
-  model = glm::translate(model, glm::vec3(kBarWidth / 2, 0.0F, 0.0F));
+  model = glm::translate(model,
+                         glm::vec3(horizontal_position, kVerticalMargin, 0.0F));
+  model =
+      glm::scale(model, glm::vec3(1.0F, height, 1.0F));  // Vertical scale only.
 
   // Set the model location.
   glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
@@ -358,8 +409,32 @@ void Renderer::RenderBar(size_t index, float magnitude, bool is_left) const {
               color_value + kBarAlphaOffset);
 
   // Draw 6 vertices (2 triangles).
-  glDrawArrays(GL_TRIANGLES, 0, kRectangleVertices);
+  glDrawArrays(GL_TRIANGLES, 0, kNumRectangleVertices);
 }
+
+void Renderer::RenderRmsBar(float rms) const {
+  float height = rms * kRmsBarScaleFactor;
+  float horizontal_position = kHorizontalMargin + ((kBarWidth * kNumBands) / 3);
+
+  // Build the model matrix.
+  glm::mat4 model = glm::mat4(1.0F);  // Identity.
+  model = glm::translate(
+      model, glm::vec3(horizontal_position, -1.0F + kVerticalMargin, 0.0F));
+  model = glm::scale(model, glm::vec3(kNumBands / 3, height, 1.0F));
+
+  // Set the model location.
+  glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
+
+  // Set the color uniform.
+  glUniform4f(color_location_, kRmsBarColorValue, 0.0F, 1.0, 1.0F);
+
+  // Draw 6 vertices (2 triangles).
+  glDrawArrays(GL_TRIANGLES, 0, kNumRectangleVertices);
+}
+
+// ----------------------
+// Diamond shape methods
+// ----------------------
 
 bool Renderer::CreateDiamondGeometry() {
   // 2 triangles forming a diamond shape centered on origin.
@@ -412,6 +487,8 @@ void Renderer::RenderDiamond(float rms, float correlation,
 
   // Build the model matrix.
   glm::mat4 model = glm::mat4(1.0F);  // Identity.
+  model = glm::translate(
+      model, glm::vec3(kTranslationFactor, kTranslationFactor, 0.0F));
   model = glm::scale(
       model, glm::vec3(width, height, 1.0F));  // Horizontal and vertical scale.
 
@@ -419,8 +496,110 @@ void Renderer::RenderDiamond(float rms, float correlation,
   glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
 
   // Set the color uniform.
-  glUniform4f(color_location_, rms / kBandwidthScaleFactor, 0.0F, rms, 1.0F);
+  glUniform4f(color_location_, 0.0F, rms, rms / kColorScaleFactor, 1.0F);
 
   // Draw 6 vertices (2 triangles).
-  glDrawArrays(GL_TRIANGLES, 0, kRectangleVertices);
+  glDrawArrays(GL_TRIANGLES, 0, kNumRectangleVertices);
+
+  // Draw outline.
+  glUniform4f(color_location_, 0.0F, rms + kOutlineColorValue,
+              (rms / kColorScaleFactor) + kOutlineColorValue, 1.0F);
+  glLineWidth(kOutlineWidth);  // Some drivers ignore values > 1.0.
+  glDrawArrays(GL_LINE_LOOP, 0, kNumRectangleVertices);
+}
+
+// ----------------------
+// Line methods
+// ----------------------
+
+bool Renderer::CreateLineGeometry() {
+  float line_vertices[] = {
+      // x, y
+      -kLineWidth, 0.0F,           0.0F,        0.0F,
+
+      0.0F,        kVerticalRange, -kLineWidth, kVerticalRange,
+  };
+
+  glGenVertexArrays(1, &line_vao_);
+  glGenBuffers(1, &line_vbo_);
+
+  // Bind the VAO. All following vertex format/state settings are stored in it.
+  glBindVertexArray(line_vao_);
+
+  // Upload vertex data to VBO.
+  glBindBuffer(GL_ARRAY_BUFFER, line_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), line_vertices,
+               GL_STATIC_DRAW);
+
+  // Describe vertex layout.
+  glVertexAttribPointer(
+      0,         // Attribute index (matches layout(location = 0) in shader).
+      2,         // Components per vertex attribute (x and y).
+      GL_FLOAT,  // Type.
+      GL_FALSE,  // Normalize.
+      2 * sizeof(float),  // Stride (bytes between vertices).
+      (void*)0            // Offset.
+  );
+  glEnableVertexAttribArray(0);  // Link buffer data to shader input.
+
+  // Unbind.
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  return (line_vao_ != 0) && (line_vbo_ != 0);
+}
+
+// horizontal_position and vertical_position are clearly named, and this
+// function is only used internally.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void Renderer::RenderLine(bool is_horizontal, float horizontal_position,
+                          float vertical_position) const {
+  float hor_pos = horizontal_position + kHorizontalMargin;
+  float ver_pos = vertical_position + kVerticalMargin - window::kPixelY;
+
+  // Build the model matrix.
+  glm::mat4 model = glm::mat4(1.0F);  // Identity.
+  model = glm::translate(model, glm::vec3(hor_pos, ver_pos, 0.0F));
+
+  if (is_horizontal) {
+    model = glm::scale(model, glm::vec3(-1.0F, kLineRotationScaleFactor, 1.0F));
+    model = glm::rotate(model, glm::radians(kLineAngle),
+                        glm::vec3(0.0F, 0.0F, 1.0F));
+  }
+
+  // Set the model location.
+  glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
+
+  // Set the color uniform.
+  glUniform4f(color_location_, kLineColorValue, kLineColorValue,
+              kLineColorValue, 1.0F);
+
+  // Set line width.
+  glLineWidth(1.0F);  // Some drivers ignore values > 1.0.
+
+  // Draw 6 vertices (2 triangles).
+  glDrawArrays(GL_LINE_STRIP, 0, kNumLineVertices);
+}
+
+// ----------------------
+// Overlay methods
+// ----------------------
+
+void Renderer::RenderLabels() const {
+  //
+}
+
+void Renderer::RenderGraphOverlay() const {
+  // Y-axes
+  RenderLine(false, 0.0F, 0.0F);    // Right FFT.
+  RenderLine(false, -1.0F, 0.0F);   // Left FFT.
+  RenderLine(false, 0.0F, -1.0F);   // RMS.
+  RenderLine(false, -1.0F, -1.0F);  // Diamond.
+  // X-axes
+  RenderLine(true, 0.0F, 0.0F);    // Right FFT.
+  RenderLine(true, -1.0F, 0.0F);   // Left FFT.
+  RenderLine(true, 0.0F, -1.0F);   // RMS.
+  RenderLine(true, -1.0F, -1.0F);  // Diamond.
+
+  // RenderLabels();
 }

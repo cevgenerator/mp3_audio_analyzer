@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of Renderer class. Handles OpenGL state, bar geometry, and
-// drawing.
+// Declaration of Renderer class. Handles OpenGL state, shape and line geometry,
+// and drawing.
 
 #pragma once
 
@@ -33,12 +33,19 @@ class Renderer {
  private:
   static bool InitializeOpenglState();
   void Update();
+  void AggregateBins();
   void SmoothBandMagnitudes();
   bool BuildBinToBandMapping();
   bool CreateBarGeometry();
   bool CreateDiamondGeometry();
+  bool CreateLineGeometry();
   void RenderBar(size_t index, float magnitude, bool is_left) const;
+  void RenderRmsBar(float rms) const;
   void RenderDiamond(float rms, float correlation, float bandwidth) const;
+  void RenderLine(bool is_horizontal, float horizontal_position,
+                  float vertical_position) const;
+  void RenderLabels() const;
+  void RenderGraphOverlay() const;
 
   float sample_rate_ = 0;
 
@@ -52,6 +59,8 @@ class Renderer {
   GLuint bar_vbo_ = 0;
   GLuint diamond_vao_ = 0;
   GLuint diamond_vbo_ = 0;
+  GLuint line_vao_ = 0;
+  GLuint line_vbo_ = 0;
 
   // Audio metrics
   std::shared_ptr<AnalysisData> analysis_data_;
