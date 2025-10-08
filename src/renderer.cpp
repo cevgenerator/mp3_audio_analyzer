@@ -11,6 +11,7 @@
 
 #include "error_handling.h"
 #include "shader_util.h"
+#include "utf8cpp/utf8/cpp11.h"
 #include "window_constants.h"
 
 namespace {
@@ -35,7 +36,7 @@ constexpr float kBarHeight = 0.05F;
 constexpr float kBarAlphaOffset = 0.1F;
 
 // RMS bar
-constexpr float kRmsBarScaleFactor = 28.0F;
+constexpr float kRmsBarScaleFactor = 25.0F;
 constexpr float kRmsBarColorValue = 0.5F;
 
 // Diamond shape
@@ -51,6 +52,11 @@ constexpr float kLineColorValue = 0.25F;
 constexpr float kLineAngle = 90.0F;
 constexpr float kLineRotationScaleFactor = 1.75F;
 
+// Labels
+constexpr float kHorizontalLabelScale = 0.001F;
+constexpr float kVerticalLabelScale = 0.0014F;
+constexpr float kTextColorValue = 0.45F;
+
 // Bin to band mapping
 constexpr float kLowerBandEdge = 20.0F;
 constexpr float kLogBase10 = 10.0F;
@@ -65,6 +71,10 @@ Renderer::Renderer() {}
 Renderer::~Renderer() {
   if (shader_program_ != 0) {
     glDeleteProgram(shader_program_);
+  }
+
+  if (text_shader_program_ != 0) {
+    glDeleteProgram(text_shader_program_);
   }
 
   if (bar_vbo_ != 0) {
@@ -90,6 +100,14 @@ Renderer::~Renderer() {
   if (line_vao_ != 0) {
     glDeleteVertexArrays(1, &line_vao_);
   }
+
+  if (label_vbo_ != 0) {
+    glDeleteBuffers(1, &label_vbo_);
+  }
+
+  if (label_vao_ != 0) {
+    glDeleteVertexArrays(1, &label_vao_);
+  }
 }
 
 bool Renderer::Initialize(long sample_rate,
@@ -105,6 +123,10 @@ bool Renderer::Initialize(long sample_rate,
     return false;
   }
 
+  if (!Succeeded("Loading texture", (!font_atlas_.LoadTexture()))) {
+    return false;
+  }
+
   auto program = CreateShaderProgram("shaders/bar.vert", "shaders/bar.frag");
 
   if (!Succeeded("Creating shader program", (!program))) {
@@ -117,6 +139,19 @@ bool Renderer::Initialize(long sample_rate,
     return false;
   }
 
+  auto text_program =
+      CreateShaderProgram("shaders/text.vert", "shaders/text.frag");
+
+  if (!Succeeded("Creating text shader program", (!text_program))) {
+    return false;
+  }
+
+  text_shader_program_ = *text_program;
+
+  if (!Succeeded("Storing text shader program", (text_shader_program_ == 0))) {
+    return false;
+  }
+
   if (!Succeeded("Creating bar geometry", (!CreateBarGeometry()))) {
     return false;
   }
@@ -125,9 +160,15 @@ bool Renderer::Initialize(long sample_rate,
     return false;
   }
 
-  if (!Succeeded("Creating Line Geometry", (!CreateLineGeometry()))) {
+  if (!Succeeded("Creating line geometry", (!CreateLineGeometry()))) {
     return false;
   }
+
+  if (!Succeeded("Creating label geometry", (!CreateLabelGeometry()))) {
+    return false;
+  }
+
+  projection_matrix_ = glm::ortho(-1.0F, 1.0F, -1.0F, 1.0F);
 
   model_location_ = glGetUniformLocation(shader_program_, "model");
 
@@ -135,7 +176,6 @@ bool Renderer::Initialize(long sample_rate,
     return false;
   }
 
-  projection_matrix_ = glm::ortho(-1.0F, 1.0F, -1.0F, 1.0F);
   projection_location_ = glGetUniformLocation(shader_program_, "projection");
 
   if (!Succeeded("Getting projection uniform location",
@@ -145,7 +185,30 @@ bool Renderer::Initialize(long sample_rate,
 
   color_location_ = glGetUniformLocation(shader_program_, "color_uniform");
 
-  return Succeeded("Getting color uniform location", (color_location_ == -1));
+  if (!Succeeded("Getting color uniform location", (color_location_ == -1))) {
+    return false;
+  }
+
+  text_model_location_ = glGetUniformLocation(text_shader_program_, "model");
+
+  if (!Succeeded("Getting text model uniform location",
+                 (text_model_location_ == -1))) {
+    return false;
+  }
+
+  text_projection_location_ =
+      glGetUniformLocation(text_shader_program_, "projection");
+
+  if (!Succeeded("Getting text projection uniform location",
+                 (text_projection_location_ == -1))) {
+    return false;
+  }
+
+  text_color_location_ =
+      glGetUniformLocation(text_shader_program_, "color_uniform");
+
+  return Succeeded("Getting text color uniform location",
+                   (text_color_location_ == -1));
 }
 
 void Renderer::Render() {
@@ -174,8 +237,7 @@ void Renderer::Render() {
   glBindVertexArray(diamond_vao_);
   RenderDiamond(rms_, correlation_, bandwidth_);
 
-  // Draw lines.
-  glBindVertexArray(line_vao_);
+  // Draw graph overlay.
   RenderGraphOverlay();
 
   glBindVertexArray(0);
@@ -585,11 +647,109 @@ void Renderer::RenderLine(bool is_horizontal, float horizontal_position,
 // Overlay methods
 // ----------------------
 
+bool Renderer::CreateLabelGeometry() {
+  struct Vertex {
+    glm::vec2 position;  // NDC (on screen).
+    glm::vec2 uv;        // Texture coordinates inside the atlas.
+  };
+
+  std::vector<Vertex> vertices;  // Will hold every corner of each glyph quad.
+
+  int label_index = 0;
+
+  for (const std::string& label : font::kStaticLabels) {
+    glm::vec2 label_pos = font::kLabelPositions[label_index++];
+
+    float x_cursor = 0.0F;  // Glyph placement within label.
+
+    for (char32_t character : utf8::utf8to32(label)) {
+      std::u32string one_char{
+          character};  // Create a 1-character UTF-32 string.
+      std::string glyph = utf8::utf32to8(one_char);  // Convert to UTF-8.
+      glm::vec4 uv_coordinates =
+          FontAtlas::GetGlyphUv(glyph);  // (u0, v0, u1, v1)
+
+      // Build 2 triangles (quad) for each glyph.
+      float x_0 = x_cursor;
+      float y_0 = 0.0F;
+
+      float x_ndc_scale = font::kGlyphWidth * kHorizontalLabelScale;
+      float y_ndc_scale = font::kGlyphHeight * kVerticalLabelScale;
+
+      float x_1 = x_cursor + x_ndc_scale;
+      float y_1 = y_ndc_scale;
+
+      float u_0 = uv_coordinates.x;
+      float v_0 = uv_coordinates.y;
+      float u_1 = uv_coordinates.z;
+      float v_1 = uv_coordinates.w;
+
+      // First triangle
+      vertices.push_back({{x_0 + label_pos.x, y_0 + label_pos.y}, {u_0, v_0}});
+      vertices.push_back({{x_1 + label_pos.x, y_0 + label_pos.y}, {u_1, v_0}});
+      vertices.push_back({{x_1 + label_pos.x, y_1 + label_pos.y}, {u_1, v_1}});
+      // Second triangle
+      vertices.push_back({{x_0 + label_pos.x, y_0 + label_pos.y}, {u_0, v_0}});
+      vertices.push_back({{x_1 + label_pos.x, y_1 + label_pos.y}, {u_1, v_1}});
+      vertices.push_back({{x_0 + label_pos.x, y_1 + label_pos.y}, {u_0, v_1}});
+
+      // Move cursor to next character using NDC-scaled width.
+      x_cursor += font::kGlyphWidth * kHorizontalLabelScale;
+    }
+  }
+
+  // Upload to GPU.
+  glGenVertexArrays(1, &label_vao_);
+  glBindVertexArray(label_vao_);
+
+  glGenBuffers(1, &label_vbo_);
+  glBindBuffer(GL_ARRAY_BUFFER, label_vbo_);
+
+  GLsizeiptr buffer_size =
+      static_cast<GLsizeiptr>(vertices.size() * sizeof(Vertex));
+  glBufferData(GL_ARRAY_BUFFER, buffer_size, vertices.data(), GL_STATIC_DRAW);
+
+  // Describe vertex attributes.
+  constexpr GLuint position_attribute = 0;
+  constexpr GLuint uv_attribute = 1;
+
+  // OpenGL interprets the final argument of glVertexAttribPointer as a
+  // *byte offset* into the currently bound VBO. The offset must be passed
+  // as a const void*; therefore the result of offsetof() is casted to void*.
+  // This cast is required by the OpenGL API and is safe here.
+  glEnableVertexAttribArray(position_attribute);
+  glVertexAttribPointer(
+      position_attribute, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+      (void*)offsetof(Vertex, position));  // NOLINT(performance-no-int-to-ptr)
+  glEnableVertexAttribArray(uv_attribute);
+  glVertexAttribPointer(
+      uv_attribute, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+      (void*)offsetof(Vertex, uv));  // NOLINT(performance-no-int-to-ptr)
+
+  // Unbind.
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  label_vertex_count_ = static_cast<GLsizei>(vertices.size());
+
+  return (label_vao_ != 0) && (label_vbo_ != 0);
+}
+
 void Renderer::RenderLabels() const {
-  //
+  glm::mat4 model = glm::mat4(1.0F);
+
+  glUniformMatrix4fv(text_model_location_, 1, GL_FALSE, &model[0][0]);
+  glUniformMatrix4fv(text_projection_location_, 1, GL_FALSE,
+                     &projection_matrix_[0][0]);
+  glUniform4f(text_color_location_, kTextColorValue, kTextColorValue,
+              kTextColorValue, 1.0F);
+
+  glDrawArrays(GL_TRIANGLES, 0, label_vertex_count_);
 }
 
 void Renderer::RenderGraphOverlay() const {
+  glBindVertexArray(line_vao_);
+
   // Y-axes
   RenderLine(false, 0.0F, 0.0F);    // Right FFT.
   RenderLine(false, -1.0F, 0.0F);   // Left FFT.
@@ -601,5 +761,9 @@ void Renderer::RenderGraphOverlay() const {
   RenderLine(true, 0.0F, -1.0F);   // RMS.
   RenderLine(true, -1.0F, -1.0F);  // Diamond.
 
-  // RenderLabels();
+  glUseProgram(text_shader_program_);
+  glBindTexture(GL_TEXTURE_2D, font_atlas_.texture());
+  glBindVertexArray(label_vao_);
+
+  RenderLabels();
 }

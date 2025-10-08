@@ -80,7 +80,8 @@ cmake --build .
 - [GLM](https://github.com/g-truc/glm) (header-only math library)
 - libmpg123 for MP3 decoding
 - PortAudio for audio playback
-
+- stb_image (for loading the font texture)
+- UTF8-CPP (for handling multiple-byte glyphs)
 - OpenGL (core graphics API, version 4.1 for macOS compatibility)
 - C++17-compatible compiler (e.g., g++, clang++)
 - Tested on Linux (Pop!_OS); Windows/macOS support planned
@@ -167,6 +168,8 @@ See LICENSE file for details.
 ### Third-party libraries
 
 - **GLAD** — licensed under the [MIT License](https://mit-license.org/)
+- **stb_image** — licensed under the [MIT License](https://github.com/nothings/stb/blob/master/stb_image.h)
+- **UTF8-CPP** — licensed under the [BSL-1.0 License](https://github.com/nemtrif/utfcpp/tree/master?tab=BSL-1.0-1-ov-file#readme)
 
 The following libraries are not included in this repository, but are dynamically linked at runtime.
 
@@ -177,6 +180,13 @@ The following libraries are not included in this repository, but are dynamically
 - **PortAudio** — licensed under the [MIT License](http://www.portaudio.com/license.html)
 
 You are responsible for complying with their licenses if you reuse or redistribute this project.
+
+### Font
+
+DejaVu Sans Mono (edited)
+- Source: https://dejavu-fonts.github.io/
+- License: Bitstream Vera Font License (with modifications)
+- Used only to generate a static bitmap font atlas (font_atlas.png)
 
 ### Audio Source
 

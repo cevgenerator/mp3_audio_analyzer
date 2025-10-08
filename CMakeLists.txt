@@ -50,6 +50,7 @@ set(SOURCES
     src/decoder.cpp
     src/error_handling.cpp
     src/fftw_wrapper.cpp
+    src/font_atlas.cpp
     src/glfw_context.cpp
     src/main.cpp
     src/renderer.cpp
