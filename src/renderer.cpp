@@ -22,7 +22,7 @@ constexpr int kNumLineVertices = 4;
 
 // Outlines
 constexpr float kOutlineColorValue = 0.5F;
-constexpr float kOutlineWidth = 3.0F;
+constexpr float kOutlineWidth = 2.5F;
 
 // Spacing
 constexpr float kHorizontalRange = 0.8F;
@@ -36,13 +36,13 @@ constexpr float kBarHeight = 0.05F;
 constexpr float kBarAlphaOffset = 0.1F;
 
 // RMS bar
-constexpr float kRmsBarScaleFactor = 25.0F;
+constexpr float kRmsBarScaleFactor = 35.0F;
 constexpr float kRmsBarColorValue = 0.5F;
 
 // Diamond shape
 constexpr float kUpperBandEdge = 20000.0F;
-constexpr float kBandwidthScaleFactor = 3.0F;
-constexpr float kCorrelationScaleFactor = 0.8F;
+constexpr float kBandwidthScaleFactor = 3.3F;
+constexpr float kCorrelationScaleFactor = 0.2F;
 constexpr float kColorScaleFactor = 1.5F;
 constexpr float kTranslationFactor = -0.5F;
 
@@ -263,9 +263,9 @@ bool Renderer::InitializeOpenglState() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  // Enable depth testing.
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LESS);
+  // Apply line smoothing.
+  glEnable(GL_LINE_SMOOTH);
+  glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
   return true;
 }
@@ -545,7 +545,8 @@ void Renderer::RenderDiamond(float rms, float correlation,
   float height = (bandwidth / kUpperBandEdge) / kBandwidthScaleFactor;
 
   // Compute width based on correlation.
-  float width = correlation * kCorrelationScaleFactor;
+  float stereo_width = 1.0F - std::max(0.0F, correlation);  // Clamp at 0.
+  float width = stereo_width * kCorrelationScaleFactor;
 
   // Build the model matrix.
   glm::mat4 model = glm::mat4(1.0F);  // Identity.
@@ -558,16 +559,23 @@ void Renderer::RenderDiamond(float rms, float correlation,
   glUniformMatrix4fv(model_location_, 1, GL_FALSE, &model[0][0]);
 
   // Set the color uniform.
-  glUniform4f(color_location_, 0.0F, rms, rms / kColorScaleFactor, 1.0F);
+  if (correlation < 0.0F) {
+    glUniform4f(color_location_, kRmsBarColorValue, 0.0F, 1.0F,
+                rms);  // Violet tint for warning.
+  } else {
+    glUniform4f(color_location_, 0.0F, rms, rms / kColorScaleFactor, 1.0F);
+  }
 
   // Draw 6 vertices (2 triangles).
   glDrawArrays(GL_TRIANGLES, 0, kNumRectangleVertices);
 
   // Draw outline.
-  glUniform4f(color_location_, 0.0F, rms + kOutlineColorValue,
-              (rms / kColorScaleFactor) + kOutlineColorValue, 1.0F);
-  glLineWidth(kOutlineWidth);  // Some drivers ignore values > 1.0.
-  glDrawArrays(GL_LINE_LOOP, 0, kNumRectangleVertices);
+  if (rms > 0) {
+    glUniform4f(color_location_, 0.0F, rms + kOutlineColorValue,
+                (rms / kColorScaleFactor) + kOutlineColorValue, 1.0F);
+    glLineWidth(kOutlineWidth);  // Some drivers ignore values > 1.0.
+    glDrawArrays(GL_LINE_LOOP, 0, kNumRectangleVertices);
+  }
 }
 
 // ----------------------

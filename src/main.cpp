@@ -23,7 +23,8 @@ int main() {
   // Initialize decoder with input file.
   Decoder decoder;
 
-  if (!decoder.Initialize("../assets/gradient_deep_performance_edit.mp3")) {
+  if (!decoder.Initialize(
+          "../assets/quantum_jazz_orbiting_a_distant_planet_edit.mp3")) {
     return 1;
   }
 

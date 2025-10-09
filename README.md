@@ -192,7 +192,8 @@ DejaVu Sans Mono (edited)
 
 This project uses a music excerpt from the track:
 
-**"Deep Performance" by Gradient**
-- Original source: [Free Music Archive](https://freemusicarchive.org/music/Gradient/Seashore/thn113-320-02-gradient_-_deep_perfomance/)
-- License: [CC BY-NC 3.0](https://creativecommons.org/licenses/by-nc/3.0/)
-- This license allows redistribution and adaptation, provided attribution is given and it's not used for commercial purposes.
+**"Orbiting A Distant Planet" by Quantum Jazz**
+- Original source: [Free Music Archive](https://freemusicarchive.org/music/Quantum_Jazz/End_of_Line/07_-_Quantum_Jazz_-_Orbiting_A_Distant_Planet/)
+- License: [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
+- Changes made: The original track was excerpted (first ~1 minute), volume was adjusted, limitting was applied, silence was added at the beginning and a fade-out was added.
+- This adapted version is also licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
