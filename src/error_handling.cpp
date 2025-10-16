@@ -15,6 +15,10 @@ void LogError(const std::string& context, const std::string& message) {
 
 bool Mpg123Succeeded(const std::string& context, int error) {
   if (error != MPG123_OK) {
+    if (error == MPG123_DONE) {
+      return false;
+    }
+
     LogError(context, mpg123_plain_strerror(error));
     return false;
   }

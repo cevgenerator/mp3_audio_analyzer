@@ -55,10 +55,5 @@ void AudioPipeline::Run() {
     }
   }
 
-  // Check the reason the loop exited.
-  if (decoder_.mpg123_error() != MPG123_DONE) {
-    Mpg123Succeeded("Decoding", decoder_.mpg123_error());
-  }
-
   running_ = false;  // Signal visualizer.
 }
