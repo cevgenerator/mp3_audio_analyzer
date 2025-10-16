@@ -3,23 +3,67 @@
 **Language:** C++  
 **Version:** `v0.3.0`
 
-A real-time MP3 audio analyzer (in development) using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/), [FFTW](https://fftw.org/), [GLFW](https://glfw.org/) and [GLAD](https://gen.glad.sh/).
+A real-time MP3 audio analyzer with visualization using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/), and [FFTW](https://fftw.org/).  
 
-Currently, the project plays back MP3 files while decoding them to raw PCM audio and performing a Fast Fourier Transform. Future versions will further analyze the audio data in real-time and output the results (e.g., for audio-reactive graphics).
+Plays and analyzes an MP3 file, extracts frequency spectrum and other audio metrics and visualizes the results.  
 
-*Note: This project is under active development. Playback is functional; further analysis features will be added soon.*
+It's multi-threaded, uses real-time DSP and shows a custom OpenGL visualization.
+
+---
+
+## Demo Video
+
+[![Watch the demo](assets/video_thumbnail.png)](https://vimeo.com/1126119128)
+
+A short demo showing the MP3 Audio Analyzer playing back and analyzing an MP3 in real time.  
+- The top-left and top-right sections of the screen display the frequency spectra of the left and right audio channels, respectively.  
+- The green diamond shape in the bottom-left section represents stereo correlation (X-axis) and frequency bandwidth (Y-axis).  
+- The bottom-right section shows the combined volume (RMS) of the left and right channels.
+
+---
+
+## Purpose
+
+This application was created as an exercise in multi-threading, memory management, encapsulation, and C++ programming in general. The goal was to build an app that could:
+
+- Analyze audio in real time
+- Deliver analysis results fast enough for real-time visualization
+
+This kind of system has applications in audio software (e.g. DAWs, VST plugins), audio-reactive music videos, and live visual performances. Certain components (such as the ring buffer) are also useful in other real-time, multi-threaded systems.
 
 ---
 
 ## Features
 
-- Uses the `mpg123` library to decode MP3 files
-- Dynamically allocates a buffer to store raw PCM data
-- Uses the `portaudio` library to play PCM data as audio
-- Uses `FFTW` to perform an FFT
-- Uses `GLFW` for window management
-- Uses `GLAD` for dynamically loading OpenGL functions
-- Handles errors and cleanly shuts down
+- Real-time MP3 playback and audio analysis
+- Multi-threaded architecture with decoupled decoding, analysis, and rendering
+- Frequency spectrum analysis for left and right channels using FFT (via `FFTW`)
+- Calculates audio metrics: RMS (volume), stereo correlation and bandwidth
+- Visualizes audio data in real time using OpenGL
+- MP3 decoding with `mpg123`, audio output via `PortAudio`
+- Rendering via GLFW and GLAD (OpenGL 4.1 compatible)
+
+---
+
+## System Overview
+
+![Thread Architecture](assets/diagram.png)
+
+> Above diagram shows a simplified version of the system architecture. Classes associated with separate threads are shown in white, I/O is shown in magenta and data sharing between threads is shown in blue.
+
+To prevent audio and visual glitches, the system decouples decoding, playback, analysis, and visualization into separate threads.
+
+The `AudioPipeline` class manages its own thread, which handles MP3 decoding and coordinates with `PortAudio` for playback. (Note: `PortAudio` internally spawns its own thread for audio output.) After decoding, raw PCM audio data is written to a lock-free single-producer, single-consumer (SPSC) ring buffer, ensuring no data races or blocking.
+
+The `AnalysisThread` reads from this ring buffer, performs a Fast Fourier Transform (FFT), and calculates several real-time audio metrics:
+
+- RMS (volume)
+- Stereo correlation
+- Frequency bandwidth
+
+These metrics are stored in a thread-safe `AnalysisData` structure, which is read by the `Visualizer`.
+
+The `Visualizer`, running on the main thread, accesses this shared data and renders four real-time visualizations using OpenGL.
 
 ---
 
@@ -72,16 +116,17 @@ cmake --build .
 
 ## Dependencies
 
-- CMake ≥ 3.10 (build system)
-
-- FFTW for the Fast Fourier Transform
-- GLAD (OpenGL function loader, included in source)
-- GLFW for window management
+- CMake ≥ 3.10 (build system)  
+---
+- [FFTW](https://fftw.org/) for the Fast Fourier Transform
+- [GLAD](https://gen.glad.sh/) (OpenGL function loader, included in source)
+- [GLFW](https://glfw.org/) for window management
 - [GLM](https://github.com/g-truc/glm) (header-only math library)
-- libmpg123 for MP3 decoding
-- PortAudio for audio playback
-- stb_image (for loading the font texture)
-- UTF8-CPP (for handling multiple-byte glyphs)
+- [libmpg123](https://mpg123.de/) for MP3 decoding
+- [PortAudio](https://portaudio.com/) for audio playback
+- [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) (for loading the font texture, included in source)
+- [UTF8-CPP](https://github.com/nemtrif/utfcpp/tree/master?tab=BSL-1.0-1-ov-file#readme) (for handling multiple-byte glyphs, included in source)
+---
 - OpenGL (core graphics API, version 4.1 for macOS compatibility)
 - C++17-compatible compiler (e.g., g++, clang++)
 - Tested on Linux (Pop!_OS); Windows/macOS support planned
@@ -130,7 +175,7 @@ project-root/
 - [x] Add analysis thread
 - [x] Add FFTW 
 - [x] Add real-time audio analysis
-- [ ] Add visualizer
+- [x] Add visualizer
 - [x] Add CMake support
 - [ ] Add cross-platform compatibility (Windows/macOS)
 

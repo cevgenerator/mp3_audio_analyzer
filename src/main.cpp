@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // MP3 Audio Player using FFTW, mpg123 and PortAudio.
-// Decodes an MP3 file to PCM and streams and analyses it in real-time.
+// Decodes an MP3 file to PCM and streams and analyses it in real-time. The
+// analysis data is visualized using OpenGL.
 
 #include <mpg123.h>
 #include <portaudio.h>

@@ -4,8 +4,8 @@
 // Declaration of Visualizer class.
 //
 // This class uses OpenGL, GLAD and GLFW to visualize the results of the
-// audio analysis. Since this class uses GLFW (which is not thread-safe), all
-// method calls must occur on the main thread.
+// audio analysis (via Renderer). Since this class uses GLFW (which is not
+// thread-safe), all method calls must occur on the main thread.
 
 #pragma once
 
