@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-10-16
+### Features
+- Real-time visualizer with OpenGL shaders
+- Logarithmic frequency band visualization
+- Text overlay with custom font rendering
+
+### Added
+- `Visualizer` class for real-time visualization of audio metrics
+- `AnalysisData` class for thread-safe data sharing
+- `AudioPipeline` class to manage audio processing on a dedicated thread
+- `Renderer` class for drawing audio visualizations and a graph overlay including text labels
+- `GlfwContext` class for RAII
+
+### Dependencies
+- Added GLFW, GLAD, and GLM for OpenGL rendering
+- Included `stb_image.h` and `utf8.h` for font texture and UTF-8 support
+
+### Changed
+- Changed audio track to better demonstrate audio reactivity
+- Updated README to include visualizer in project description
+
 ## [0.3.0] - 2025-09-22
 - Expanded real-time audio analysis in analysis thread
 - Added RMS (volume) measurement per channel
@@ -19,13 +40,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Updated project license to **GPL-2.0-or-later** to comply with FFTW’s license terms
 
 ## [0.1.6] - 2025-09-15
-- Added reusable lock-free SPSC RingBuffer<T> class
-- Added test for ring buffer under tests/
+- Added reusable lock-free SPSC `RingBuffer<T>` class
+- Added test for ring buffer under `tests/`
 - Updated README with test instructions
 
 ## [v0.1.5] - 2025-09-10
 ### Fixed
-- Audio glitches at startup and during volume changes resolved by setting `framesPerBuffer` to 512 instead of using `paFramesPerBufferUnspecified`
+- Audio glitches at startup and during volume changes resolved by setting `framesPerBuffer` to `512` instead of using `paFramesPerBufferUnspecified`
 
 ## [v0.1.4] – 2025-09-10
 ### Changed
@@ -59,20 +80,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Documentation
 - Added comments explaining safe type conversion for MP3 sample rates
-- Removed language from README.md title for brevity
+- Removed programming language from `README.md` title for brevity
 
 ## [0.1.0] - 2025-08-30
 ### Added
 - Initial version with working MP3 playback via mpg123 and PortAudio
 - Clean project structure and README
 - CMake build system and custom find modules
-- .clang-format and .gitignore setup
-- .clang-tidy static analysis config
+- `.clang-format` and `.gitignore` setup
+- `.clang-tidy` static analysis config
 - License and CHANGELOG
 - Adopted semantic versioning (SemVer) with project version tracking
 - To-Do list entry for fixing audio glitches and investigating buffer underruns
 
-#### Features
+### Features
 - Decodes MP3 to PCM and streams to default output device
 - Implements real-time playback with error handling
 - Uses dynamic buffer allocation based on MP3 format

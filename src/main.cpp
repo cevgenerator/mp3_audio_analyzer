@@ -2,24 +2,30 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // MP3 Audio Player using FFTW, mpg123 and PortAudio.
-// Decodes an MP3 file to PCM and streams and analyses it in real-time.
+// Decodes an MP3 file to PCM and streams and analyses it in real-time. The
+// analysis data is visualized using OpenGL.
 
 #include <mpg123.h>
 #include <portaudio.h>
 
-#include <cstddef>
-#include <string>
+#include <memory>
 
+#include "analysis_data.h"
 #include "analysis_thread.h"
 #include "audio_output.h"
+#include "audio_pipeline.h"
 #include "decoder.h"
-#include "error_handling.h"
+#include "visualizer.h"
 
 int main() {
+  // Create shared analysis data for communication between threads.
+  auto analysis_data = std::make_shared<AnalysisData>();
+
   // Initialize decoder with input file.
   Decoder decoder;
 
-  if (!decoder.Initialize("../assets/gradient_deep_performance_edit.mp3")) {
+  if (!decoder.Initialize(
+          "../assets/quantum_jazz_orbiting_a_distant_planet_edit.mp3")) {
     return 1;
   }
 
@@ -33,35 +39,23 @@ int main() {
   // Initialize analysis thread.
   AnalysisThread analysis_thread;
 
-  if (!analysis_thread.Initialize(decoder.sample_rate())) {
+  if (!analysis_thread.Initialize(decoder.sample_rate(), analysis_data)) {
     return 1;
   }
 
-  // ------------------------------
-  // Real time audio decoding and streaming
-  // ------------------------------
+  // Initialize AudioPipeline.
+  AudioPipeline audio_pipeline(decoder, audio_output, analysis_thread);
 
-  size_t bytes_read;
+  audio_pipeline.Start();
 
-  // This loop runs until the MP3 is fully decoded. The buffer contains
-  // bytes_read bytes of PCM data.
-  while (decoder.Read(bytes_read)) {
-    size_t frames = bytes_read / decoder.frame_size();
+  // Initialize visualizer.
+  Visualizer visualizer;
 
-    // Copy buffer to analysis thread.
-    if (!analysis_thread.buffer().Push(decoder.buffer_data(), frames * 2)) {
-      break;
-    }
-
-    // Copy buffer to audio output.
-    if (!audio_output.WriteStream(decoder.buffer_data(), frames)) break;
-  }
-
-  // Check the reason the loop exited.
-  if (decoder.mpg123_error() != MPG123_DONE &&
-      !Mpg123Succeeded("Decoding", decoder.mpg123_error())) {
+  if (!visualizer.Initialize(decoder.sample_rate(), analysis_data)) {
     return 1;
   }
+
+  visualizer.Run(audio_pipeline.running());
 
   return 0;
 }
