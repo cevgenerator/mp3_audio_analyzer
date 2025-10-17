@@ -10,7 +10,9 @@
 #include "error_handling.h"
 
 namespace {
+
 constexpr long kSampleRate = 44100;
+
 }  // namespace
 
 // ----------------------
