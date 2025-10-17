@@ -20,17 +20,17 @@ class AnalysisThread {
   AnalysisThread();
   ~AnalysisThread();
 
-  bool Initialize(long sample_rate,
-                  const std::shared_ptr<AnalysisData>& analysis_data);
+  [[nodiscard]] bool Initialize(
+      long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
 
-  RingBuffer<float>& buffer();  // So producer can write into it.
+  [[nodiscard]] RingBuffer<float>& buffer();  // So producer can write into it.
 
  private:
   void Start();
   void Stop();
   void CalculateRms();
   void CalculateStereoCorrelation();
-  float CalculateBandwidth(const fftwf_complex* output) const;
+  [[nodiscard]] float CalculateBandwidth(const fftwf_complex* output) const;
   void CalculateAverageBandwidth();
   void CalculateMagnitudes();
   void Run();

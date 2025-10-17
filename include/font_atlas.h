@@ -44,14 +44,14 @@ const std::array<glm::vec2, kStaticLabels.size()> kLabelPositions = {
 
 class FontAtlas {
  public:
-  FontAtlas();
-  ~FontAtlas();
+  FontAtlas() = default;
+  ~FontAtlas() = default;
 
-  bool LoadTexture();
-  static int GetGlyphIndex(const std::string& character);
-  static glm::vec4 GetGlyphUv(const std::string& character);
+  [[nodiscard]] bool LoadTexture();
+  [[nodiscard]] static int GetGlyphIndex(const std::string& character);
+  [[nodiscard]] static glm::vec4 GetGlyphUv(const std::string& character);
 
-  GLuint texture() const;
+  [[nodiscard]] GLuint texture() const;
 
  private:
   GLuint texture_ = 0;

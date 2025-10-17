@@ -13,8 +13,8 @@
 
 class AnalysisData {
  public:
-  AnalysisData();
-  ~AnalysisData();
+  AnalysisData() = default;
+  ~AnalysisData() = default;
 
   void Set(float rms, float correlation, float bandwidth,
            const std::array<float, analysis::kFftBinCount>& spectrum_left,

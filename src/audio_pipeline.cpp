@@ -7,8 +7,6 @@
 
 #include <cstddef>
 
-#include "error_handling.h"
-
 AudioPipeline::AudioPipeline(Decoder& decoder, AudioOutput& audio_output,
                              AnalysisThread& analysis_thread)
     : decoder_(decoder),

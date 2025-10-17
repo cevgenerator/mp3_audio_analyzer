@@ -7,9 +7,6 @@
 
 #include <atomic>
 
-Visualizer::Visualizer() {}
-Visualizer::~Visualizer() {}
-
 bool Visualizer::Initialize(
     long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data) {
   return glfw_.Initialize() && renderer.Initialize(sample_rate, analysis_data);

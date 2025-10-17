@@ -15,13 +15,13 @@ class FftwWrapper {
   FftwWrapper();
   ~FftwWrapper();
 
-  bool Initialize(size_t fft_size);
+  [[nodiscard]] bool Initialize(size_t fft_size);
   void Execute();
 
-  float* input_left();
-  float* input_right();
-  const fftwf_complex* output_left() const;
-  const fftwf_complex* output_right() const;
+  [[nodiscard]] float* input_left();
+  [[nodiscard]] float* input_right();
+  [[nodiscard]] const fftwf_complex* output_left() const;
+  [[nodiscard]] const fftwf_complex* output_right() const;
 
  private:
   int fft_size_int = 0;

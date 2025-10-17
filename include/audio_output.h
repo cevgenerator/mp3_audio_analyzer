@@ -23,10 +23,9 @@
 class PortAudioSystem {
  public:
   PortAudioSystem();
-
   ~PortAudioSystem();
 
-  int error() const;
+  [[nodiscard]] int error() const;
 
  private:
   int error_ = paNoError;
@@ -41,11 +40,10 @@ class PortAudioSystem {
 class AudioStream {
  public:
   AudioStream(const PaStreamParameters& output_parameters, long sample_rate);
-
   ~AudioStream();
 
-  PaStream* stream() const;
-  int error() const;
+  [[nodiscard]] PaStream* stream() const;
+  [[nodiscard]] int error() const;
 
  private:
   PaStream* stream_ = nullptr;
@@ -63,9 +61,8 @@ class AudioOutput {
  public:
   AudioOutput();
 
-  bool Initialize(const Decoder& decoder);
-
-  bool WriteStream(const float* buffer, size_t frames);
+  [[nodiscard]] bool Initialize(const Decoder& decoder);
+  [[nodiscard]] bool WriteStream(const float* buffer, size_t frames);
 
  private:
   PortAudioSystem audio_system_;
@@ -78,17 +75,11 @@ class AudioOutput {
 
   // Internal methods
 
-  static PaSampleFormat GetPortAudioFormat(int mpg123_encoding);
-
-  bool ValidateAudioSystem() const;
-
-  bool FindDefaultOutputDevice();
-
-  bool ConfigureOutputParameters(const Decoder& decoder);
-
-  bool VerifyFormatSupport(const Decoder& decoder);
-
-  bool OpenStream(const Decoder& decoder);
-
-  bool StartStream();
+  [[nodiscard]] static PaSampleFormat GetPortAudioFormat(int mpg123_encoding);
+  [[nodiscard]] bool ValidateAudioSystem() const;
+  [[nodiscard]] bool FindDefaultOutputDevice();
+  [[nodiscard]] bool ConfigureOutputParameters(const Decoder& decoder);
+  [[nodiscard]] bool VerifyFormatSupport(const Decoder& decoder);
+  [[nodiscard]] bool OpenStream(const Decoder& decoder);
+  [[nodiscard]] bool StartStream();
 };

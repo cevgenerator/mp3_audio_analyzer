@@ -25,27 +25,27 @@ constexpr size_t kNumBands = 32;
 
 class Renderer {
  public:
-  Renderer();
+  Renderer() = default;
   ~Renderer();
 
-  bool Initialize(long sample_rate,
-                  const std::shared_ptr<AnalysisData>& analysis_data);
+  [[nodiscard]] bool Initialize(
+      long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
   void Render();
 
  private:
-  static bool InitializeOpenglState();
+  [[nodiscard]] static bool InitializeOpenglState();
   void Update();
 
   // Bin to band mapping
   void AggregateBins();
   void SmoothBandMagnitudes();
-  bool BuildBinToBandMapping();
+  [[nodiscard]] bool BuildBinToBandMapping();
 
   // Geometry
-  bool CreateBarGeometry();
-  bool CreateDiamondGeometry();
-  bool CreateLineGeometry();
-  bool CreateLabelGeometry();
+  [[nodiscard]] bool CreateBarGeometry();
+  [[nodiscard]] bool CreateDiamondGeometry();
+  [[nodiscard]] bool CreateLineGeometry();
+  [[nodiscard]] bool CreateLabelGeometry();
 
   // Rendering
   void RenderBar(size_t index, float magnitude, bool is_left) const;

@@ -42,6 +42,9 @@ std::optional<GLuint> CompileShader(GLenum type, const std::string& source) {
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
   if (success == 0) {
+    // Needed for OpenGL C API call.
+    // OpenGL expects a raw char* buffer to write the info log into.
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
     char info_log[kShaderInfoLogMaxLength];
 
     glGetShaderInfoLog(shader, sizeof(info_log), nullptr, info_log);

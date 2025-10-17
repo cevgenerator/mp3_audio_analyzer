@@ -5,7 +5,7 @@
 
 #include "fftw_wrapper.h"
 
-FftwWrapper::FftwWrapper() {}
+FftwWrapper::FftwWrapper() = default;
 
 FftwWrapper::~FftwWrapper() {
   fftwf_destroy_plan(plan_left_);
@@ -25,7 +25,8 @@ bool FftwWrapper::Initialize(size_t fft_size) {
   output_right_ =
       (fftwf_complex*)fftwf_malloc(sizeof(fftw_complex) * (fft_size / 2 + 1));
 
-  if (!input_left_ || !input_right_ || !output_left_ || !output_right_) {
+  if ((input_left_ == nullptr) || (input_right_ == nullptr) ||
+      (output_left_ == nullptr) || (output_right_ == nullptr)) {
     return false;
   }
 

@@ -23,12 +23,11 @@ class AudioPipeline {
  public:
   AudioPipeline(Decoder& decoder, AudioOutput& audio_output,
                 AnalysisThread& analysis_thread);
-
   ~AudioPipeline();
 
   void Start();
 
-  const std::atomic<bool>& running() const;
+  [[nodiscard]] const std::atomic<bool>& running() const;
 
  private:
   void Stop();

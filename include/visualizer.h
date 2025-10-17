@@ -17,11 +17,11 @@
 
 class Visualizer {
  public:
-  Visualizer();
-  ~Visualizer();
+  Visualizer() = default;
+  ~Visualizer() = default;
 
-  bool Initialize(long sample_rate,
-                  const std::shared_ptr<AnalysisData>& analysis_data);
+  [[nodiscard]] bool Initialize(
+      long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
   void Run(const std::atomic<bool>& running);
 
  private:

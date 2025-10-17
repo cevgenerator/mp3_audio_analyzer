@@ -10,8 +10,6 @@
 #include "error_handling.h"
 #include "window_constants.h"
 
-GlfwContext::GlfwContext() {}
-
 GlfwContext::~GlfwContext() {
   if (window_ != nullptr) {
     glfwDestroyWindow(window_);

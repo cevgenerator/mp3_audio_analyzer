@@ -34,10 +34,10 @@ class RingBuffer {
                 "RingBuffer<T> requires trivially copyable type");
 
  public:
-  RingBuffer() {}
+  RingBuffer() = default;
 
   // Initialize() must be called right after the constructor.
-  bool Initialize(size_t capacity) {
+  [[nodiscard]] bool Initialize(size_t capacity) {
     // Must be a power of two and non-zero.
     if (capacity == 0 || (capacity & (capacity - 1)) != 0) {
       return false;
@@ -51,7 +51,7 @@ class RingBuffer {
 
   // Pushes `count` items into the ring buffer. Returns false if not enough
   // space.
-  bool Push(const T* data, size_t count) {
+  [[nodiscard]] bool Push(const T* data, size_t count) {
     if (data == nullptr || count == 0) {
       std::cerr << "Error: Invalid input for RingBuffer::Push().\n";
 
@@ -92,7 +92,7 @@ class RingBuffer {
   }
 
   // Copies `count` items from buffer to destination.
-  bool Pop(T* dest, size_t count) {
+  [[nodiscard]] bool Pop(T* dest, size_t count) {
     if (dest == nullptr || count == 0) {
       std::cerr << "Error: Invalid input for RingBuffer::Pop().\n";
 
@@ -106,7 +106,9 @@ class RingBuffer {
     // Calculate how many items are available to read.
     size_t used = head - tail;
 
-    if (count > used) return false;  // Not enough data.
+    if (count > used) {
+      return false;  // Not enough data.
+    }
 
     // Calculate read index (wraparound-safe).
     size_t index = tail & (capacity_ - 1);
@@ -125,13 +127,13 @@ class RingBuffer {
     return true;
   }
 
-  bool Empty() const { return Size() == 0; }
+  [[nodiscard]] bool Empty() const { return Size() == 0; }
 
-  bool Full() const { return Size() == capacity_; }
+  [[nodiscard]] bool Full() const { return Size() == capacity_; }
 
-  size_t capacity() const { return capacity_; }
+  [[nodiscard]] size_t capacity() const { return capacity_; }
 
-  size_t Size() const {
+  [[nodiscard]] size_t Size() const {
     size_t head = head_.load(std::memory_order_acquire);
     size_t tail = tail_.load(std::memory_order_acquire);
 

@@ -15,15 +15,15 @@
 
 class GlfwContext {
  public:
-  GlfwContext();
+  GlfwContext() = default;
   ~GlfwContext();
 
   GlfwContext(const GlfwContext&) = delete;
   GlfwContext& operator=(const GlfwContext&) = delete;
 
-  bool Initialize();
+  [[nodiscard]] bool Initialize();
 
-  GLFWwindow* window();
+  [[nodiscard]] GLFWwindow* window();
 
  private:
   GLFWwindow* window_ = nullptr;

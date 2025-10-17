@@ -66,8 +66,6 @@ constexpr int kKernelRadius = 3;  // 7-point kernel: radius 3.
 
 }  // namespace
 
-Renderer::Renderer() {}
-
 Renderer::~Renderer() {
   if (shader_program_ != 0) {
     glDeleteProgram(shader_program_);
@@ -401,7 +399,8 @@ bool Renderer::BuildBinToBandMapping() {
 // ----------------------
 
 bool Renderer::CreateBarGeometry() {
-  // 2 triangles forming a vertical bar centered on origin.
+  // Vertex data for bar geometry (uploaded once, never modified).
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   float bar_vertices[] = {
       // x, y
       0.0F,      0.0F,       kBarWidth, 0.0F,       kBarWidth, kBarHeight,
@@ -427,7 +426,7 @@ bool Renderer::CreateBarGeometry() {
       GL_FLOAT,  // Type.
       GL_FALSE,  // Normalize.
       2 * sizeof(float),  // Stride (bytes between vertices).
-      (void*)0            // Offset.
+      nullptr             // Offset.
   );
   glEnableVertexAttribArray(0);  // Link buffer data to shader input.
 
@@ -499,7 +498,8 @@ void Renderer::RenderRmsBar(float rms) const {
 // ----------------------
 
 bool Renderer::CreateDiamondGeometry() {
-  // 2 triangles forming a diamond shape centered on origin.
+  // Vertex data for diamond geometry (uploaded once, never modified).
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   float diamond_vertices[] = {
       // x, y
       -1.0F, 0.0F, 0.0F, 1.0F,  1.0F,  0.0F,
@@ -525,7 +525,7 @@ bool Renderer::CreateDiamondGeometry() {
       GL_FLOAT,  // Type.
       GL_FALSE,  // Normalize.
       2 * sizeof(float),  // Stride (bytes between vertices).
-      (void*)0            // Offset.
+      nullptr             // Offset.
   );
   glEnableVertexAttribArray(0);  // Link buffer data to shader input.
 
@@ -583,6 +583,8 @@ void Renderer::RenderDiamond(float rms, float correlation,
 // ----------------------
 
 bool Renderer::CreateLineGeometry() {
+  // Vertex data for line geometry (uploaded once, never modified).
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   float line_vertices[] = {
       // x, y
       -kLineWidth, 0.0F,           0.0F,        0.0F,
@@ -608,7 +610,7 @@ bool Renderer::CreateLineGeometry() {
       GL_FLOAT,  // Type.
       GL_FALSE,  // Normalize.
       2 * sizeof(float),  // Stride (bytes between vertices).
-      (void*)0            // Offset.
+      nullptr             // Offset.
   );
   glEnableVertexAttribArray(0);  // Link buffer data to shader input.
 
@@ -713,8 +715,7 @@ bool Renderer::CreateLabelGeometry() {
   glGenBuffers(1, &label_vbo_);
   glBindBuffer(GL_ARRAY_BUFFER, label_vbo_);
 
-  GLsizeiptr buffer_size =
-      static_cast<GLsizeiptr>(vertices.size() * sizeof(Vertex));
+  auto buffer_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(Vertex));
   glBufferData(GL_ARRAY_BUFFER, buffer_size, vertices.data(), GL_STATIC_DRAW);
 
   // Describe vertex attributes.

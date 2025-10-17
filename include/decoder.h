@@ -21,11 +21,10 @@
 class Mpg123HandleWrapper {
  public:
   Mpg123HandleWrapper();
-
   ~Mpg123HandleWrapper();
 
-  mpg123_handle* handle() const;
-  int error() const;
+  [[nodiscard]] mpg123_handle* handle() const;
+  [[nodiscard]] int error() const;
 
  private:
   int error_ = MPG123_OK;
@@ -43,19 +42,19 @@ class Decoder {
   Decoder();
 
   // Initializes the decoder with the given MP3 file path.
-  bool Initialize(const char* path);
+  [[nodiscard]] bool Initialize(const char* path);
 
   // Reads decoded PCM data into the internal buffer.
-  bool Read(size_t& bytes_read);
+  [[nodiscard]] bool Read(size_t& bytes_read);
 
   // Accessors
-  int mpg123_error() const;
-  mpg123_handle* handle() const;
-  long sample_rate() const;
-  int channels() const;
-  int encoding_format() const;
-  const float* buffer_data() const;
-  int frame_size() const;
+  [[nodiscard]] int mpg123_error() const;
+  [[nodiscard]] mpg123_handle* handle() const;
+  [[nodiscard]] long sample_rate() const;
+  [[nodiscard]] int channels() const;
+  [[nodiscard]] int encoding_format() const;
+  [[nodiscard]] const float* buffer_data() const;
+  [[nodiscard]] int frame_size() const;
 
  private:
   // Data members
@@ -73,10 +72,10 @@ class Decoder {
   int frame_size_ = 0;         // 0 indicates error.
 
   // Internal helper functions
-  bool ValidateHandle() const;
-  bool OpenFile(const char* path);
-  bool GetFormatData();
-  bool AllocateBuffer();
-  bool DetermineBytesPerSample();
-  bool DetermineFrameSize();
+  [[nodiscard]] bool ValidateHandle() const;
+  [[nodiscard]] bool OpenFile(const char* path);
+  [[nodiscard]] bool GetFormatData();
+  [[nodiscard]] bool AllocateBuffer();
+  [[nodiscard]] bool DetermineBytesPerSample();
+  [[nodiscard]] bool DetermineFrameSize();
 };

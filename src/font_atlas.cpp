@@ -12,9 +12,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-FontAtlas::FontAtlas() {}
-FontAtlas::~FontAtlas() {}
-
 // OpenGL context must be current before calling this method.
 bool FontAtlas::LoadTexture() {
   int width;
@@ -28,6 +25,7 @@ bool FontAtlas::LoadTexture() {
   data = stbi_load("../assets/font_atlas.png", &width, &height, &channels, 4);
 
   if (!Succeeded("Loading font texture", (data == nullptr))) {
+    stbi_image_free(data);
     return false;
   }
 
@@ -78,8 +76,8 @@ glm::vec4 FontAtlas::GetGlyphUv(const std::string& character) {
   float normalized_width = font::kGlyphWidth / font::kAtlasWidth;
   float normalized_height = font::kGlyphHeight / font::kAtlasHeight;
 
-  return glm::vec4(u_value, v_value, u_value + normalized_width,
-                   v_value + normalized_height);
+  return {u_value, v_value, u_value + normalized_width,
+          v_value + normalized_height};
 }
 
 GLuint FontAtlas::texture() const {

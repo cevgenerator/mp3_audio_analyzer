@@ -41,7 +41,8 @@ AudioStream::AudioStream(const PaStreamParameters& output_parameters,
   // precision limits of double.
   error_ = Pa_OpenStream(&stream_,
                          nullptr,  // No input.
-                         &output_parameters, sample_rate, kFramesPerBuffer,
+                         &output_parameters, static_cast<double>(sample_rate),
+                         kFramesPerBuffer,
                          paClipOff,  // No clipping.
                          nullptr,    // No callback.
                          nullptr);   // No callback user data.
@@ -78,7 +79,9 @@ bool AudioOutput::Initialize(const Decoder& decoder) {
 }
 
 bool AudioOutput::WriteStream(const float* buffer, size_t frames) {
-  if (!audio_stream_) return false;
+  if (!audio_stream_) {
+    return false;
+  }
 
   portaudio_error_ = Pa_WriteStream(audio_stream_->stream(), buffer, frames);
 
@@ -133,8 +136,8 @@ bool AudioOutput::ConfigureOutputParameters(const Decoder& decoder) {
 // Safe conversion of sample_rate_: MP3 sample rates are well below precision
 // limits of double.
 bool AudioOutput::VerifyFormatSupport(const Decoder& decoder) {
-  portaudio_error_ =
-      Pa_IsFormatSupported(nullptr, &output_parameters_, decoder.sample_rate());
+  portaudio_error_ = Pa_IsFormatSupported(
+      nullptr, &output_parameters_, static_cast<double>(decoder.sample_rate()));
 
   return PortAudioSucceeded("Verifying audio format support by output device",
                             portaudio_error_);

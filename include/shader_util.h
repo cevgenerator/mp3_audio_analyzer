@@ -10,7 +10,9 @@
 #include <optional>
 #include <string>
 
-std::optional<std::string> LoadShaderSource(const std::string& path);
-std::optional<GLuint> CompileShader(GLenum type, const std::string& source);
-std::optional<GLuint> CreateShaderProgram(const std::string& vertex_path,
-                                          const std::string& fragment_path);
+[[nodiscard]] std::optional<std::string> LoadShaderSource(
+    const std::string& path);
+[[nodiscard]] std::optional<GLuint> CompileShader(GLenum type,
+                                                  const std::string& source);
+[[nodiscard]] std::optional<GLuint> CreateShaderProgram(
+    const std::string& vertex_path, const std::string& fragment_path);

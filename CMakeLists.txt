@@ -60,7 +60,7 @@ set(SOURCES
 
 # Add GLAD as a static library
 add_library(glad STATIC src/glad/gl.c)
-target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(glad SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Build executable
 add_executable(mp3_analyzer ${SOURCES})
@@ -84,6 +84,14 @@ target_include_directories(mp3_analyzer
     ${MPG123_INCLUDE_DIRS}
     ${PortAudio_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# Suppress warnings from third-party headers
+target_include_directories(mp3_analyzer SYSTEM
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/glad
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/utf8cpp
 )
 
 # Copy shaders into the build directory
