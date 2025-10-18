@@ -9,7 +9,6 @@
 
 #include <fftw3.h>
 
-// Initialize() should be called right after the constructor.
 class FftwWrapper {
  public:
   FftwWrapper() = default;
@@ -22,6 +21,7 @@ class FftwWrapper {
   FftwWrapper(FftwWrapper&& other) = delete;
   FftwWrapper& operator=(FftwWrapper&& other) = delete;
 
+  // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(size_t fft_size);
   void Execute();
 

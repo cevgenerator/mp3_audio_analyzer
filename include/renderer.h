@@ -34,6 +34,7 @@ class Renderer {
   Renderer(Renderer&&) = delete;
   Renderer& operator=(Renderer&&) = delete;
 
+  // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(
       long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
   void Render();

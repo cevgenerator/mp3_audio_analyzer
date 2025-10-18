@@ -82,6 +82,7 @@ class AudioOutput {
   AudioOutput(AudioOutput&&) = delete;
   AudioOutput& operator=(AudioOutput&&) = delete;
 
+  // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(const Decoder& decoder);
   [[nodiscard]] bool WriteStream(const float* buffer, size_t frames);
 

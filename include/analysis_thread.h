@@ -14,7 +14,6 @@
 #include "fftw_wrapper.h"
 #include "ring_buffer.h"
 
-// Initialize() must be called right after the constructor.
 class AnalysisThread {
  public:
   AnalysisThread();
@@ -26,6 +25,7 @@ class AnalysisThread {
   AnalysisThread(AnalysisThread&&) = delete;
   AnalysisThread& operator=(AnalysisThread&&) = delete;
 
+  // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(
       long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
 

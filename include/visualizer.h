@@ -26,6 +26,7 @@ class Visualizer {
   Visualizer(Visualizer&&) = delete;
   Visualizer& operator=(Visualizer&&) = delete;
 
+  // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(
       long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
   void Run(const std::atomic<bool>& running);

@@ -54,7 +54,7 @@ class Decoder {
   Decoder(Decoder&&) noexcept = delete;
   Decoder& operator=(Decoder&&) noexcept = delete;
 
-  // Initializes the decoder with the given MP3 file path.
+  // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(const char* path);
 
   // Reads decoded PCM data into the internal buffer.

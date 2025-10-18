@@ -24,6 +24,7 @@ class GlfwContext {
   GlfwContext(GlfwContext&&) = delete;
   GlfwContext& operator=(GlfwContext&&) = delete;
 
+  // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize();
 
   [[nodiscard]] GLFWwindow* window();
