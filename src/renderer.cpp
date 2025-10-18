@@ -289,7 +289,7 @@ void Renderer::AggregateBins() {
 
     band_magnitudes_left_[band] += spectrum_left_[bin];
     band_magnitudes_right_[band] += spectrum_right_[bin];
-    bin_counts[band]++;
+    ++bin_counts[band];
   }
 
   // Normalize.
@@ -668,7 +668,8 @@ bool Renderer::CreateLabelGeometry() {
   int label_index = 0;
 
   for (const std::string& label : font::kStaticLabels) {
-    glm::vec2 label_pos = font::kLabelPositions[label_index++];
+    glm::vec2 label_pos =
+        font::kLabelPositions[label_index++];  // Post-increment.
 
     float x_cursor = 0.0F;  // Glyph placement within label.
 
