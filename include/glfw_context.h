@@ -18,8 +18,11 @@ class GlfwContext {
   GlfwContext() = default;
   ~GlfwContext();
 
+  // Non-copyable for safety, non-movable for simplicity.
   GlfwContext(const GlfwContext&) = delete;
   GlfwContext& operator=(const GlfwContext&) = delete;
+  GlfwContext(GlfwContext&&) = delete;
+  GlfwContext& operator=(GlfwContext&&) = delete;
 
   [[nodiscard]] bool Initialize();
 

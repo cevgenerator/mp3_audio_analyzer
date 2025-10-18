@@ -16,6 +16,12 @@ class AnalysisData {
   AnalysisData() = default;
   ~AnalysisData() = default;
 
+  // Class owns a mutex, which is non-copyable and non-movable.
+  AnalysisData(const AnalysisData&) = delete;
+  AnalysisData& operator=(const AnalysisData&) = delete;
+  AnalysisData(AnalysisData&&) = delete;
+  AnalysisData& operator=(AnalysisData&&) = delete;
+
   void Set(float rms, float correlation, float bandwidth,
            const std::array<float, analysis::kFftBinCount>& spectrum_left,
            const std::array<float, analysis::kFftBinCount>& spectrum_right);

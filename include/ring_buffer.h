@@ -35,6 +35,13 @@ class RingBuffer {
 
  public:
   RingBuffer() = default;
+  ~RingBuffer() = default;
+
+  // SPSC ring buffer should be non-copyable, but can be moved.
+  RingBuffer(const RingBuffer&) = delete;
+  RingBuffer& operator=(const RingBuffer&) = delete;
+  RingBuffer(RingBuffer&&) noexcept = default;
+  RingBuffer& operator=(RingBuffer&&) noexcept = default;
 
   // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(size_t capacity) {

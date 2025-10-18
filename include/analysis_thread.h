@@ -20,6 +20,12 @@ class AnalysisThread {
   AnalysisThread();
   ~AnalysisThread();
 
+  // thread is non-copyable, and FftwWrapper is non-movable.
+  AnalysisThread(const AnalysisThread&) = delete;
+  AnalysisThread& operator=(const AnalysisThread&) = delete;
+  AnalysisThread(AnalysisThread&&) = delete;
+  AnalysisThread& operator=(AnalysisThread&&) = delete;
+
   [[nodiscard]] bool Initialize(
       long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
 

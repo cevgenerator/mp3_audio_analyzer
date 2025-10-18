@@ -12,8 +12,15 @@
 // Initialize() should be called right after the constructor.
 class FftwWrapper {
  public:
-  FftwWrapper();
+  FftwWrapper() = default;
   ~FftwWrapper();
+
+  // Non-copyable and non-movable to pevent undefined behavior regarding raw
+  // pointers and FFTW resources.
+  FftwWrapper(const FftwWrapper&) = delete;
+  FftwWrapper& operator=(const FftwWrapper&) = delete;
+  FftwWrapper(FftwWrapper&& other) = delete;
+  FftwWrapper& operator=(FftwWrapper&& other) = delete;
 
   [[nodiscard]] bool Initialize(size_t fft_size);
   void Execute();

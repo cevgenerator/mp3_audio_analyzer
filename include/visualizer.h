@@ -20,6 +20,12 @@ class Visualizer {
   Visualizer() = default;
   ~Visualizer() = default;
 
+  // Members are non-copyable and non-movable.
+  Visualizer(const Visualizer&) = delete;
+  Visualizer& operator=(const Visualizer&) = delete;
+  Visualizer(Visualizer&&) = delete;
+  Visualizer& operator=(Visualizer&&) = delete;
+
   [[nodiscard]] bool Initialize(
       long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
   void Run(const std::atomic<bool>& running);

@@ -25,6 +25,13 @@ class PortAudioSystem {
   PortAudioSystem();
   ~PortAudioSystem();
 
+  // Only one PortAudio system must be active at a time.
+  // Non-movable for safety.
+  PortAudioSystem(const PortAudioSystem&) = delete;
+  PortAudioSystem& operator=(const PortAudioSystem&) = delete;
+  PortAudioSystem(PortAudioSystem&&) = delete;
+  PortAudioSystem& operator=(PortAudioSystem&&) = delete;
+
   [[nodiscard]] int error() const;
 
  private:
@@ -41,6 +48,13 @@ class AudioStream {
  public:
   AudioStream(const PaStreamParameters& output_parameters, long sample_rate);
   ~AudioStream();
+
+  // Non-copyable to prevent double-freeing of stream_.
+  // Non-movable for simplicity.
+  AudioStream(const AudioStream&) = delete;
+  AudioStream& operator=(const AudioStream&) = delete;
+  AudioStream(AudioStream&&) = delete;
+  AudioStream& operator=(AudioStream&&) = delete;
 
   [[nodiscard]] PaStream* stream() const;
   [[nodiscard]] int error() const;
@@ -60,6 +74,13 @@ class AudioStream {
 class AudioOutput {
  public:
   AudioOutput();
+  ~AudioOutput() = default;
+
+  // PortAudioSystem and AudioStream are non-copyable and non-movable.
+  AudioOutput(const AudioOutput&) = delete;
+  AudioOutput& operator=(const AudioOutput&) = delete;
+  AudioOutput(AudioOutput&&) = delete;
+  AudioOutput& operator=(AudioOutput&&) = delete;
 
   [[nodiscard]] bool Initialize(const Decoder& decoder);
   [[nodiscard]] bool WriteStream(const float* buffer, size_t frames);

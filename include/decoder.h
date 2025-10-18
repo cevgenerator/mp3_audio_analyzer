@@ -23,6 +23,12 @@ class Mpg123HandleWrapper {
   Mpg123HandleWrapper();
   ~Mpg123HandleWrapper();
 
+  // Non-copyable for safety, non-movable for simplicity.
+  Mpg123HandleWrapper(const Mpg123HandleWrapper&) = delete;
+  Mpg123HandleWrapper& operator=(const Mpg123HandleWrapper&) = delete;
+  Mpg123HandleWrapper(Mpg123HandleWrapper&&) noexcept = default;
+  Mpg123HandleWrapper& operator=(Mpg123HandleWrapper&&) noexcept = default;
+
   [[nodiscard]] mpg123_handle* handle() const;
   [[nodiscard]] int error() const;
 
@@ -40,6 +46,13 @@ class Mpg123HandleWrapper {
 class Decoder {
  public:
   Decoder();
+  ~Decoder() = default;
+
+  // Mpg123HandleWrapper is non-copyable/non-movable.
+  Decoder(const Decoder&) = delete;
+  Decoder& operator=(const Decoder&) = delete;
+  Decoder(Decoder&&) noexcept = delete;
+  Decoder& operator=(Decoder&&) noexcept = delete;
 
   // Initializes the decoder with the given MP3 file path.
   [[nodiscard]] bool Initialize(const char* path);

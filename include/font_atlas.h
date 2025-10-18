@@ -47,6 +47,12 @@ class FontAtlas {
   FontAtlas() = default;
   ~FontAtlas() = default;
 
+  // Non-copyable for safety, non-movable for simplicity.
+  FontAtlas(const FontAtlas&) = delete;
+  FontAtlas& operator=(const FontAtlas&) = delete;
+  FontAtlas(FontAtlas&&) = delete;
+  FontAtlas& operator=(FontAtlas&&) = delete;
+
   [[nodiscard]] bool LoadTexture();
   [[nodiscard]] static int GetGlyphIndex(const std::string& character);
   [[nodiscard]] static glm::vec4 GetGlyphUv(const std::string& character);

@@ -28,6 +28,12 @@ class Renderer {
   Renderer() = default;
   ~Renderer();
 
+  // Non-copyable for safety, non-movable for simplicity.
+  Renderer(const Renderer&) = delete;
+  Renderer& operator=(const Renderer&) = delete;
+  Renderer(Renderer&&) = delete;
+  Renderer& operator=(Renderer&&) = delete;
+
   [[nodiscard]] bool Initialize(
       long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
   void Render();

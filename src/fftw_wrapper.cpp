@@ -5,8 +5,6 @@
 
 #include "fftw_wrapper.h"
 
-FftwWrapper::FftwWrapper() = default;
-
 FftwWrapper::~FftwWrapper() {
   fftwf_destroy_plan(plan_left_);
   fftwf_destroy_plan(plan_right_);

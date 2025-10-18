@@ -25,6 +25,12 @@ class AudioPipeline {
                 AnalysisThread& analysis_thread);
   ~AudioPipeline();
 
+  // Class is not meant to be transferred or duplicated.
+  AudioPipeline(const AudioPipeline&) = delete;
+  AudioPipeline& operator=(const AudioPipeline&) = delete;
+  AudioPipeline(AudioPipeline&&) = delete;
+  AudioPipeline& operator=(AudioPipeline&&) = delete;
+
   void Start();
 
   [[nodiscard]] const std::atomic<bool>& running() const;
