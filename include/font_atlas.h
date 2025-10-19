@@ -51,7 +51,7 @@ const std::array<glm::vec2, kStaticLabels.size()> kLabelPositions = {
 class FontAtlas {
  public:
   FontAtlas() = default;
-  ~FontAtlas() = default;
+  ~FontAtlas();
 
   // Non-copyable for safety (the texture is unique and should not be copied).
   // Non-movable for simplicity.
