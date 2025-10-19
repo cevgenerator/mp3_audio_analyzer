@@ -31,6 +31,9 @@ int main() {
     return 1;
   }
 
+  // Store sample rate for initializing analysis_thread and visualizer.
+  long sample_rate = decoder.sample_rate();
+
   // Initialize audio output system.
   AudioOutput audio_output;
 
@@ -41,7 +44,7 @@ int main() {
   // Initialize analysis thread.
   AnalysisThread analysis_thread;
 
-  if (!analysis_thread.Initialize(decoder.sample_rate(), analysis_data)) {
+  if (!analysis_thread.Initialize(sample_rate, analysis_data)) {
     return 1;
   }
 
@@ -53,7 +56,7 @@ int main() {
   // Initialize visualizer.
   Visualizer visualizer;
 
-  if (!visualizer.Initialize(decoder.sample_rate(), analysis_data)) {
+  if (!visualizer.Initialize(sample_rate, analysis_data)) {
     return 1;
   }
 
