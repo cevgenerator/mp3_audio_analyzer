@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Project setup
-project(mp3_audio_analyzer VERSION 0.4.1 LANGUAGES C CXX)
+project(mp3_audio_analyzer VERSION 0.4.2 LANGUAGES C CXX)
 
 # C++17 standard required
 set(CMAKE_CXX_STANDARD 17)
