@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementations of shader utility functions.
+//
+// Implements shader utility functions for loading, compiling, and linking GLSL
+// shaders in OpenGL.
 
 #include "shader_util.h"
 
@@ -15,6 +18,8 @@ constexpr int kShaderInfoLogMaxLength = 512;
 
 }  // namespace
 
+// Loads the full contents of a shader source file into a string.
+// Returns std::nullopt if the file can't be opened.
 std::optional<std::string> LoadShaderSource(const std::string& path) {
   std::ifstream file(path);
 
@@ -29,7 +34,8 @@ std::optional<std::string> LoadShaderSource(const std::string& path) {
   return buffer.str();
 }
 
-// Returns compiled shader ID (wrapped in std::optional) upon succes.
+// Compiles GLSL source code into a shader object.
+// Returns shader ID on success, std::nullopt on failure.
 std::optional<GLuint> CompileShader(GLenum type, const std::string& source) {
   GLuint shader = glCreateShader(type);  // Unique OpenGL ID.
   const char* src = source.c_str();      // Convert to raw C-style string.
@@ -42,6 +48,9 @@ std::optional<GLuint> CompileShader(GLenum type, const std::string& source) {
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
   if (success == 0) {
+    // Needed for OpenGL C API call.
+    // OpenGL expects a raw char* buffer to write the info log into.
+    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
     char info_log[kShaderInfoLogMaxLength];
 
     glGetShaderInfoLog(shader, sizeof(info_log), nullptr, info_log);
@@ -56,6 +65,8 @@ std::optional<GLuint> CompileShader(GLenum type, const std::string& source) {
   return shader;
 }
 
+// Loads, compiles, and links a vertex and fragment shader into an OpenGL
+// program. Returns program ID on success, std::nullopt on failure.
 std::optional<GLuint> CreateShaderProgram(const std::string& vertex_path,
                                           const std::string& fragment_path) {
   auto vertex_source = LoadShaderSource(vertex_path);

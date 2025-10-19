@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of GlfwContext class.
+//
+// This class is intended to be used by Visualizer. Since GLFW is not
+// thread-safe, all method calls must occur on the main thread.
 
 #include "glfw_context.h"
 
@@ -9,8 +12,6 @@
 
 #include "error_handling.h"
 #include "window_constants.h"
-
-GlfwContext::GlfwContext() {}
 
 GlfwContext::~GlfwContext() {
   if (window_ != nullptr) {
@@ -20,6 +21,7 @@ GlfwContext::~GlfwContext() {
   glfwTerminate();  // Safe even if initialization failed.
 }
 
+// Initializes GLFW and creates the window.
 bool GlfwContext::Initialize() {
   if (!Succeeded("Initializing GLFW", (glfwInit() == GLFW_FALSE))) {
     return false;

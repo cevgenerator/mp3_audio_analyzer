@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of FontAtlas class.
+//
+// Intended to be used by Renderer to load a font texture and retrieve the UV
+// coordinates for individual glyphs. The UV coordinates are used
+// to map characters to specific portions of the texture atlas, which is then
+// used for text rendering in OpenGL.
 
 #include "font_atlas.h"
 
@@ -12,9 +17,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-FontAtlas::FontAtlas() {}
-FontAtlas::~FontAtlas() {}
-
+// Loads the font texture from a PNG file into an OpenGL texture.
+//
 // OpenGL context must be current before calling this method.
 bool FontAtlas::LoadTexture() {
   int width;
@@ -28,6 +32,7 @@ bool FontAtlas::LoadTexture() {
   data = stbi_load("../assets/font_atlas.png", &width, &height, &channels, 4);
 
   if (!Succeeded("Loading font texture", (data == nullptr))) {
+    stbi_image_free(data);
     return false;
   }
 
@@ -75,13 +80,14 @@ glm::vec4 FontAtlas::GetGlyphUv(const std::string& character) {
   // Top/bottom edge in UV space (depending on system).
   float v_value = 0.0F;
 
+  // Normalized width and height of the glyph in UV space.
   float normalized_width = font::kGlyphWidth / font::kAtlasWidth;
   float normalized_height = font::kGlyphHeight / font::kAtlasHeight;
 
-  return glm::vec4(u_value, v_value, u_value + normalized_width,
-                   v_value + normalized_height);
+  return {u_value, v_value, u_value + normalized_width,
+          v_value + normalized_height};
 }
 
 GLuint FontAtlas::texture() const {
-  return texture_;
+  return texture_;  // ID used by Renderer to bind the texture for drawing.
 }

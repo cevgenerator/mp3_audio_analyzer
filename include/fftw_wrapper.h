@@ -1,27 +1,37 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of FftwWrapper class. This class wraps the FFTW library for RAII
-// and handles FFT initialization, execution, and provides access to FFT
-// results.
+// Declaration of FftwWrapper class.
+//
+// This class wraps the FFTW library for RAII and handles FFT initialization,
+// execution, and provides access to FFT results.
 
 #pragma once
 
 #include <fftw3.h>
 
-// Initialize() should be called right after the constructor.
 class FftwWrapper {
  public:
-  FftwWrapper();
+  FftwWrapper() = default;
   ~FftwWrapper();
 
-  bool Initialize(size_t fft_size);
+  // Non-copyable and non-movable to pevent undefined behavior regarding raw
+  // pointers and FFTW resources.
+  FftwWrapper(const FftwWrapper&) = delete;
+  FftwWrapper& operator=(const FftwWrapper&) = delete;
+  FftwWrapper(FftwWrapper&& other) = delete;
+  FftwWrapper& operator=(FftwWrapper&& other) = delete;
+
+  // Initialize() must be called right after the constructor.
+  [[nodiscard]] bool Initialize(size_t fft_size);
+
+  // Executes the FFT operation on the input data.
   void Execute();
 
-  float* input_left();
-  float* input_right();
-  const fftwf_complex* output_left() const;
-  const fftwf_complex* output_right() const;
+  [[nodiscard]] float* input_left();
+  [[nodiscard]] float* input_right();
+  [[nodiscard]] const fftwf_complex* output_left() const;
+  [[nodiscard]] const fftwf_complex* output_right() const;
 
  private:
   int fft_size_int = 0;

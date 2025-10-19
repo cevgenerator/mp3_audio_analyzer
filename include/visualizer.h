@@ -3,9 +3,11 @@
 //
 // Declaration of Visualizer class.
 //
-// This class uses OpenGL, GLAD and GLFW to visualize the results of the
-// audio analysis (via Renderer). Since this class uses GLFW (which is not
-// thread-safe), all method calls must occur on the main thread.
+// Uses OpenGL, GLAD, and GLFW to visualize audio analysis results via the
+// Renderer class.
+//
+// Note: All method calls must be made from the main thread, as GLFW is not
+// thread-safe.
 
 #pragma once
 
@@ -17,14 +19,24 @@
 
 class Visualizer {
  public:
-  Visualizer();
-  ~Visualizer();
+  Visualizer() = default;
+  ~Visualizer() = default;
 
-  bool Initialize(long sample_rate,
-                  const std::shared_ptr<AnalysisData>& analysis_data);
+  // Members are non-copyable and non-movable.
+  Visualizer(const Visualizer&) = delete;
+  Visualizer& operator=(const Visualizer&) = delete;
+  Visualizer(Visualizer&&) = delete;
+  Visualizer& operator=(Visualizer&&) = delete;
+
+  // Initialize() must be called right after the constructor.
+  [[nodiscard]] bool Initialize(
+      long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
+
+  // Enters the main render loop. Exits when `running` is false.
+  // Must only be called after Initialize().
   void Run(const std::atomic<bool>& running);
 
  private:
-  GlfwContext glfw_;
-  Renderer renderer;
+  GlfwContext glfw_;  // Manages GLFW window and OpenGL context.
+  Renderer renderer;  // Responsible for rendering visual elements.
 };

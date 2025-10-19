@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of Renderer class.
+//
+// This class visualizes audio analysis data (FFT spectrum, RMS, correlation,
+// bandwidth) using OpenGL. Handles rendering frequency bars, an RMS indicator,
+// a correlation/bandwidth graph, and labeled axes. Owned and used by
+// Visualizer.
 
 #include "renderer.h"
 
@@ -40,7 +45,7 @@ constexpr float kRmsBarScaleFactor = 35.0F;
 constexpr float kRmsBarColorValue = 0.5F;
 
 // Diamond shape
-constexpr float kUpperBandEdge = 20000.0F;
+constexpr float kUpperBandEdge = 20000.0F;  // Upper limit human hearing in Hz.
 constexpr float kBandwidthScaleFactor = 3.3F;
 constexpr float kCorrelationScaleFactor = 0.2F;
 constexpr float kColorScaleFactor = 1.5F;
@@ -58,15 +63,16 @@ constexpr float kVerticalLabelScale = 0.0014F;
 constexpr float kTextColorValue = 0.45F;
 
 // Bin to band mapping
-constexpr float kLowerBandEdge = 20.0F;
+constexpr float kLowerBandEdge = 20.0F;  // Lower limit human hearing in Hz.
 constexpr float kLogBase10 = 10.0F;
+
+// 7-point smoothing kernel for band magnitudes, for reducing noise while
+// preserving signal trends.
 constexpr std::array<float, 7> kSmoothingKernel = {0.05F, 0.1F, 0.2F, 0.3F,
                                                    0.2F,  0.1F, 0.05F};
 constexpr int kKernelRadius = 3;  // 7-point kernel: radius 3.
 
 }  // namespace
-
-Renderer::Renderer() {}
 
 Renderer::~Renderer() {
   if (shader_program_ != 0) {
@@ -110,6 +116,7 @@ Renderer::~Renderer() {
   }
 }
 
+// Initializes data members and sets up OpenGL state, shaders, and geometry.
 bool Renderer::Initialize(long sample_rate,
                           const std::shared_ptr<AnalysisData>& analysis_data) {
   sample_rate_ = static_cast<float>(sample_rate);
@@ -168,6 +175,7 @@ bool Renderer::Initialize(long sample_rate,
     return false;
   }
 
+  // Set up orthographic projection for normalized device coordinates (-1 to 1).
   projection_matrix_ = glm::ortho(-1.0F, 1.0F, -1.0F, 1.0F);
 
   model_location_ = glGetUniformLocation(shader_program_, "model");
@@ -211,6 +219,7 @@ bool Renderer::Initialize(long sample_rate,
                    (text_color_location_ == -1));
 }
 
+// Renders a single frame of the visualization, including all visual elements.
 void Renderer::Render() {
   // Clear screen before drawing new frame.
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -270,6 +279,8 @@ bool Renderer::InitializeOpenglState() {
   return true;
 }
 
+// Fetches and processes audio analysis data (RMS, correlation, bandwidth,
+// spectra) to update visualization parameters before rendering.
 void Renderer::Update() {
   analysis_data_->Get(rms_, correlation_, bandwidth_, spectrum_left_,
                       spectrum_right_);
@@ -278,6 +289,8 @@ void Renderer::Update() {
   SmoothBandMagnitudes();
 }
 
+// Sums the magnitudes of the FFT bins within each frequency band, then
+// normalizes the values by dividing by the number of bins in each band.
 void Renderer::AggregateBins() {
   // Clear band_magnitudes_.
   band_magnitudes_left_.fill(0.0F);
@@ -291,7 +304,7 @@ void Renderer::AggregateBins() {
 
     band_magnitudes_left_[band] += spectrum_left_[bin];
     band_magnitudes_right_[band] += spectrum_right_[bin];
-    bin_counts[band]++;
+    ++bin_counts[band];
   }
 
   // Normalize.
@@ -303,6 +316,13 @@ void Renderer::AggregateBins() {
   }
 }
 
+// Applies a smoothing kernel to the band magnitudes to reduce noise.
+//
+// Smooths the frequency band magnitudes using a weighted moving
+// average. For each band, it considers neighboring bands within a defined
+// radius, applying a kernel to compute a weighted average. The smoothed values
+// are then stored back into `band_magnitudes_left_` and
+// `band_magnitudes_right_`.
 void Renderer::SmoothBandMagnitudes() {
   std::array<float, kNumBands> smoothed_left = {};
   std::array<float, kNumBands> smoothed_right = {};
@@ -338,6 +358,9 @@ void Renderer::SmoothBandMagnitudes() {
   band_magnitudes_right_ = smoothed_right;
 }
 
+// Maps FFT bins to frequency bands using logarithmic spacing, enabling
+// visualization of frequency spectrum data in a way that is more aligned with
+// how humans perceive sound.
 bool Renderer::BuildBinToBandMapping() {
   if (!Succeeded("Validating sample rate", (sample_rate_ <= 0.0F))) {
     return false;
@@ -400,8 +423,10 @@ bool Renderer::BuildBinToBandMapping() {
 // Bar shape methods
 // ----------------------
 
+// Creates and uploads vertex data for a rectangular bar shape to GPU buffers.
 bool Renderer::CreateBarGeometry() {
-  // 2 triangles forming a vertical bar centered on origin.
+  // Vertex data for bar geometry (uploaded once, never modified).
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   float bar_vertices[] = {
       // x, y
       0.0F,      0.0F,       kBarWidth, 0.0F,       kBarWidth, kBarHeight,
@@ -427,7 +452,7 @@ bool Renderer::CreateBarGeometry() {
       GL_FLOAT,  // Type.
       GL_FALSE,  // Normalize.
       2 * sizeof(float),  // Stride (bytes between vertices).
-      (void*)0            // Offset.
+      nullptr             // Offset.
   );
   glEnableVertexAttribArray(0);  // Link buffer data to shader input.
 
@@ -438,6 +463,10 @@ bool Renderer::CreateBarGeometry() {
   return (bar_vao_ != 0) && (bar_vbo_ != 0);
 }
 
+// Renders a single bar representing the frequency band at the specified index
+// with given magnitude. The 'is_left' flag shifts the bar for left channel
+// visualization.
+//
 // index and magnitude are clearly named, and this function is only used
 // internally.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -474,6 +503,8 @@ void Renderer::RenderBar(size_t index, float magnitude, bool is_left) const {
   glDrawArrays(GL_TRIANGLES, 0, kNumRectangleVertices);
 }
 
+// Renders a single bar representing the RMS of the left and right audio
+// channels combined.
 void Renderer::RenderRmsBar(float rms) const {
   float height = rms * kRmsBarScaleFactor;
   float horizontal_position = kHorizontalMargin + ((kBarWidth * kNumBands) / 3);
@@ -498,8 +529,11 @@ void Renderer::RenderRmsBar(float rms) const {
 // Diamond shape methods
 // ----------------------
 
+// Creates and uploads vertex data for a rectangular diamond shape to GPU
+// buffers.
 bool Renderer::CreateDiamondGeometry() {
-  // 2 triangles forming a diamond shape centered on origin.
+  // Vertex data for diamond geometry (uploaded once, never modified).
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   float diamond_vertices[] = {
       // x, y
       -1.0F, 0.0F, 0.0F, 1.0F,  1.0F,  0.0F,
@@ -525,7 +559,7 @@ bool Renderer::CreateDiamondGeometry() {
       GL_FLOAT,  // Type.
       GL_FALSE,  // Normalize.
       2 * sizeof(float),  // Stride (bytes between vertices).
-      (void*)0            // Offset.
+      nullptr             // Offset.
   );
   glEnableVertexAttribArray(0);  // Link buffer data to shader input.
 
@@ -536,16 +570,20 @@ bool Renderer::CreateDiamondGeometry() {
   return (diamond_vao_ != 0) && (diamond_vbo_ != 0);
 }
 
+// Renders a diamond shape representing stereo correlation and frequency
+// bandwidth. rms is used to make the shape responsive to volume changes.
+//
 // rms, correlation and bandwidth are clearly named, and this function is only
 // used internally.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Renderer::RenderDiamond(float rms, float correlation,
                              float bandwidth) const {
-  // Compute height based on bandwidth.
+  // Compute height based on bandwidth, scaled relative to 20 kHz upper limit.
   float height = (bandwidth / kUpperBandEdge) / kBandwidthScaleFactor;
 
-  // Compute width based on correlation.
-  float stereo_width = 1.0F - std::max(0.0F, correlation);  // Clamp at 0.
+  // Compute width based on correlation; lower correlation widens the diamond.
+  // Clamp at 0 to avoid negative width.
+  float stereo_width = 1.0F - std::max(0.0F, correlation);
   float width = stereo_width * kCorrelationScaleFactor;
 
   // Build the model matrix.
@@ -561,7 +599,7 @@ void Renderer::RenderDiamond(float rms, float correlation,
   // Set the color uniform.
   if (correlation < 0.0F) {
     glUniform4f(color_location_, kRmsBarColorValue, 0.0F, 1.0F,
-                rms);  // Violet tint for warning.
+                rms);  // Violet tint for warning for potential phase issues.
   } else {
     glUniform4f(color_location_, 0.0F, rms, rms / kColorScaleFactor, 1.0F);
   }
@@ -582,7 +620,10 @@ void Renderer::RenderDiamond(float rms, float correlation,
 // Line methods
 // ----------------------
 
+// Creates and uploads vertex data for a graph line to GPU buffers.
 bool Renderer::CreateLineGeometry() {
+  // Vertex data for line geometry (uploaded once, never modified).
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
   float line_vertices[] = {
       // x, y
       -kLineWidth, 0.0F,           0.0F,        0.0F,
@@ -608,7 +649,7 @@ bool Renderer::CreateLineGeometry() {
       GL_FLOAT,  // Type.
       GL_FALSE,  // Normalize.
       2 * sizeof(float),  // Stride (bytes between vertices).
-      (void*)0            // Offset.
+      nullptr             // Offset.
   );
   glEnableVertexAttribArray(0);  // Link buffer data to shader input.
 
@@ -619,6 +660,9 @@ bool Renderer::CreateLineGeometry() {
   return (line_vao_ != 0) && (line_vbo_ != 0);
 }
 
+// Renders a graph line at the given coordinates. The `is_horizontal` flag is
+// used to rotate the line.
+//
 // horizontal_position and vertical_position are clearly named, and this
 // function is only used internally.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -655,6 +699,9 @@ void Renderer::RenderLine(bool is_horizontal, float horizontal_position,
 // Overlay methods
 // ----------------------
 
+// Builds geometry for text labels by creating quads for each glyph in static
+// labels. Converts UTF-8 strings to glyph UVs and uploads vertex and texture
+// coordinate data to GPU.
 bool Renderer::CreateLabelGeometry() {
   struct Vertex {
     glm::vec2 position;  // NDC (on screen).
@@ -666,10 +713,13 @@ bool Renderer::CreateLabelGeometry() {
   int label_index = 0;
 
   for (const std::string& label : font::kStaticLabels) {
-    glm::vec2 label_pos = font::kLabelPositions[label_index++];
+    glm::vec2 label_pos =
+        font::kLabelPositions[label_index++];  // Post-increment.
 
     float x_cursor = 0.0F;  // Glyph placement within label.
 
+    // Build quads for each glyph in the label, mapping texture coordinates from
+    // the font atlas.
     for (char32_t character : utf8::utf8to32(label)) {
       std::u32string one_char{
           character};  // Create a 1-character UTF-32 string.
@@ -713,8 +763,7 @@ bool Renderer::CreateLabelGeometry() {
   glGenBuffers(1, &label_vbo_);
   glBindBuffer(GL_ARRAY_BUFFER, label_vbo_);
 
-  GLsizeiptr buffer_size =
-      static_cast<GLsizeiptr>(vertices.size() * sizeof(Vertex));
+  auto buffer_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(Vertex));
   glBufferData(GL_ARRAY_BUFFER, buffer_size, vertices.data(), GL_STATIC_DRAW);
 
   // Describe vertex attributes.
@@ -743,6 +792,7 @@ bool Renderer::CreateLabelGeometry() {
   return (label_vao_ != 0) && (label_vbo_ != 0);
 }
 
+// Renders all text labels at the predetermined positions.
 void Renderer::RenderLabels() const {
   glm::mat4 model = glm::mat4(1.0F);
 
@@ -755,6 +805,7 @@ void Renderer::RenderLabels() const {
   glDrawArrays(GL_TRIANGLES, 0, label_vertex_count_);
 }
 
+// Renders the graph overlay, consisting of the graph lines and the text labels.
 void Renderer::RenderGraphOverlay() const {
   glBindVertexArray(line_vao_);
 

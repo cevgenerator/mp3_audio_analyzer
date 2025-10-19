@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of GlfwContext class. This class is an RAII wrapper for GLFW.
-// Since GLFW is not thread-safe, all method calls must occur on the main
-// thread.
+// Declaration of GlfwContext class.
+//
+// This class is an RAII wrapper for GLFW. It manages the GLFW window and OpenGL
+// context. Since GLFW is not thread-safe, all method calls must occur on the
+// main thread.
 
 #pragma once
 
@@ -15,15 +17,19 @@
 
 class GlfwContext {
  public:
-  GlfwContext();
+  GlfwContext() = default;
   ~GlfwContext();
 
+  // Non-copyable for safety, non-movable for simplicity.
   GlfwContext(const GlfwContext&) = delete;
   GlfwContext& operator=(const GlfwContext&) = delete;
+  GlfwContext(GlfwContext&&) = delete;
+  GlfwContext& operator=(GlfwContext&&) = delete;
 
-  bool Initialize();
+  // Initialize() must be called right after the constructor.
+  [[nodiscard]] bool Initialize();
 
-  GLFWwindow* window();
+  [[nodiscard]] GLFWwindow* window();
 
  private:
   GLFWwindow* window_ = nullptr;

@@ -1,9 +1,17 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of Decoder and Mpg123HandleWrapper classes,
-// which provide a safe and easy interface for decoding MP3 files
-// using the mpg123 library.
+// Declarations of Decoder and Mpg123HandleWrapper classes.
+//
+// Decoder wraps the mpg123 library to handle MP3 file decoding,
+// including file I/O, format parsing, buffer management, and PCM decoding.
+//
+// Note: Decoder is NOT thread-safe. It must only be used from the AudioPipeline
+// thread after initialization. Temporary single-threaded access during
+// initialization is safe as long as no other threads are running.
+//
+// Mpg123HandleWrapper is a simple RAII wrapper for mpg123_handle* to ensure
+// correct allocation and cleanup.
 
 #pragma once
 
@@ -21,11 +29,16 @@
 class Mpg123HandleWrapper {
  public:
   Mpg123HandleWrapper();
-
   ~Mpg123HandleWrapper();
 
-  mpg123_handle* handle() const;
-  int error() const;
+  // Non-copyable for safety, non-movable for simplicity.
+  Mpg123HandleWrapper(const Mpg123HandleWrapper&) = delete;
+  Mpg123HandleWrapper& operator=(const Mpg123HandleWrapper&) = delete;
+  Mpg123HandleWrapper(Mpg123HandleWrapper&&) noexcept = default;
+  Mpg123HandleWrapper& operator=(Mpg123HandleWrapper&&) noexcept = default;
+
+  [[nodiscard]] mpg123_handle* handle() const;
+  [[nodiscard]] int error() const;
 
  private:
   int error_ = MPG123_OK;
@@ -41,21 +54,28 @@ class Mpg123HandleWrapper {
 class Decoder {
  public:
   Decoder();
+  ~Decoder() = default;
 
-  // Initializes the decoder with the given MP3 file path.
-  bool Initialize(const char* path);
+  // Mpg123HandleWrapper is non-copyable/non-movable.
+  Decoder(const Decoder&) = delete;
+  Decoder& operator=(const Decoder&) = delete;
+  Decoder(Decoder&&) noexcept = delete;
+  Decoder& operator=(Decoder&&) noexcept = delete;
+
+  // Initialize() must be called right after the constructor.
+  [[nodiscard]] bool Initialize(const char* path);
 
   // Reads decoded PCM data into the internal buffer.
-  bool Read(size_t& bytes_read);
+  [[nodiscard]] bool Read(size_t& bytes_read);
 
   // Accessors
-  int mpg123_error() const;
-  mpg123_handle* handle() const;
-  long sample_rate() const;
-  int channels() const;
-  int encoding_format() const;
-  const float* buffer_data() const;
-  int frame_size() const;
+  [[nodiscard]] int mpg123_error() const;
+  [[nodiscard]] mpg123_handle* handle() const;
+  [[nodiscard]] long sample_rate() const;
+  [[nodiscard]] int channels() const;
+  [[nodiscard]] int encoding_format() const;
+  [[nodiscard]] const float* buffer_data() const;
+  [[nodiscard]] int frame_size() const;
 
  private:
   // Data members
@@ -73,10 +93,10 @@ class Decoder {
   int frame_size_ = 0;         // 0 indicates error.
 
   // Internal helper functions
-  bool ValidateHandle() const;
-  bool OpenFile(const char* path);
-  bool GetFormatData();
-  bool AllocateBuffer();
-  bool DetermineBytesPerSample();
-  bool DetermineFrameSize();
+  [[nodiscard]] bool ValidateHandle() const;
+  [[nodiscard]] bool OpenFile(const char* path);
+  [[nodiscard]] bool GetFormatData();
+  [[nodiscard]] bool AllocateBuffer();
+  [[nodiscard]] bool DetermineBytesPerSample();
+  [[nodiscard]] bool DetermineFrameSize();
 };

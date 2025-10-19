@@ -1,8 +1,10 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of AnalysisThread class. Creates a thread for reading audio data
-// from a ring buffer and performing analysis using FFTW.
+// Declaration of the AnalysisThread class.
+//
+// Launches a dedicated thread that reads PCM audio from a ring buffer,
+// performs real-time analysis using FFTW, and updates shared analysis data.
 
 #pragma once
 
@@ -14,23 +16,29 @@
 #include "fftw_wrapper.h"
 #include "ring_buffer.h"
 
-// Initialize() must be called right after the constructor.
 class AnalysisThread {
  public:
   AnalysisThread();
   ~AnalysisThread();
 
-  bool Initialize(long sample_rate,
-                  const std::shared_ptr<AnalysisData>& analysis_data);
+  // thread is non-copyable, and FftwWrapper is non-movable.
+  AnalysisThread(const AnalysisThread&) = delete;
+  AnalysisThread& operator=(const AnalysisThread&) = delete;
+  AnalysisThread(AnalysisThread&&) = delete;
+  AnalysisThread& operator=(AnalysisThread&&) = delete;
 
-  RingBuffer<float>& buffer();  // So producer can write into it.
+  // Initialize() must be called right after the constructor.
+  [[nodiscard]] bool Initialize(
+      long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
+
+  [[nodiscard]] RingBuffer<float>& buffer();  // So producer can write into it.
 
  private:
-  void Start();
+  void Start();  // Launches the analysis thread.
   void Stop();
   void CalculateRms();
   void CalculateStereoCorrelation();
-  float CalculateBandwidth(const fftwf_complex* output) const;
+  [[nodiscard]] float CalculateBandwidth(const fftwf_complex* output) const;
   void CalculateAverageBandwidth();
   void CalculateMagnitudes();
   void Run();

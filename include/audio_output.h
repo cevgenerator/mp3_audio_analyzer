@@ -1,9 +1,15 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declarations for audio output functionality using the PortAudio library.
-// Includes RAII wrappers for system and stream management, and a high-level
-// AudioOutput interface that initializes, configures, and writes audio data.
+// Declarations for classes handling audio output functionality using the
+// PortAudio library.
+//
+// Includes RAII wrappers for system and stream management,
+// and a high-level AudioOutput interface that initializes, configures, and
+// writes audio data to the default system audio output.
+//
+// Note: AudioOutput is NOT thread-safe. It is designed to be used exclusively
+// from the AudioPipeline thread. Do not access it from other threads.
 
 #pragma once
 
@@ -23,10 +29,16 @@
 class PortAudioSystem {
  public:
   PortAudioSystem();
-
   ~PortAudioSystem();
 
-  int error() const;
+  // Only one PortAudio system must be active at a time.
+  // Non-movable for safety.
+  PortAudioSystem(const PortAudioSystem&) = delete;
+  PortAudioSystem& operator=(const PortAudioSystem&) = delete;
+  PortAudioSystem(PortAudioSystem&&) = delete;
+  PortAudioSystem& operator=(PortAudioSystem&&) = delete;
+
+  [[nodiscard]] int error() const;
 
  private:
   int error_ = paNoError;
@@ -41,11 +53,17 @@ class PortAudioSystem {
 class AudioStream {
  public:
   AudioStream(const PaStreamParameters& output_parameters, long sample_rate);
-
   ~AudioStream();
 
-  PaStream* stream() const;
-  int error() const;
+  // Non-copyable to prevent double-freeing of stream_.
+  // Non-movable for simplicity.
+  AudioStream(const AudioStream&) = delete;
+  AudioStream& operator=(const AudioStream&) = delete;
+  AudioStream(AudioStream&&) = delete;
+  AudioStream& operator=(AudioStream&&) = delete;
+
+  [[nodiscard]] PaStream* stream() const;
+  [[nodiscard]] int error() const;
 
  private:
   PaStream* stream_ = nullptr;
@@ -58,14 +76,21 @@ class AudioStream {
 
 // AudioOutput is a high-level wrapper for audio playback using PortAudio.
 // It handles system initialization, stream configuration, starting, and writing
-// audio data.
+// audio data to the system audio output.
 class AudioOutput {
  public:
   AudioOutput();
+  ~AudioOutput() = default;
 
-  bool Initialize(const Decoder& decoder);
+  // PortAudioSystem and AudioStream are non-copyable and non-movable.
+  AudioOutput(const AudioOutput&) = delete;
+  AudioOutput& operator=(const AudioOutput&) = delete;
+  AudioOutput(AudioOutput&&) = delete;
+  AudioOutput& operator=(AudioOutput&&) = delete;
 
-  bool WriteStream(const float* buffer, size_t frames);
+  // Initialize() must be called right after the constructor.
+  [[nodiscard]] bool Initialize(const Decoder& decoder);
+  [[nodiscard]] bool WriteStream(const float* buffer, size_t frames);
 
  private:
   PortAudioSystem audio_system_;
@@ -78,17 +103,11 @@ class AudioOutput {
 
   // Internal methods
 
-  static PaSampleFormat GetPortAudioFormat(int mpg123_encoding);
-
-  bool ValidateAudioSystem() const;
-
-  bool FindDefaultOutputDevice();
-
-  bool ConfigureOutputParameters(const Decoder& decoder);
-
-  bool VerifyFormatSupport(const Decoder& decoder);
-
-  bool OpenStream(const Decoder& decoder);
-
-  bool StartStream();
+  [[nodiscard]] static PaSampleFormat GetPortAudioFormat(int mpg123_encoding);
+  [[nodiscard]] bool ValidateAudioSystem() const;
+  [[nodiscard]] bool FindDefaultOutputDevice();
+  [[nodiscard]] bool ConfigureOutputParameters(const Decoder& decoder);
+  [[nodiscard]] bool VerifyFormatSupport(const Decoder& decoder);
+  [[nodiscard]] bool OpenStream(const Decoder& decoder);
+  [[nodiscard]] bool StartStream();
 };

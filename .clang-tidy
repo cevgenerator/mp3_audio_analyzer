@@ -1,10 +1,17 @@
 Checks: >
-  clang-analyzer-*,performance-*,modernize-*,
+  clang-analyzer-*,performance-*,
+  modernize-*,-modernize-use-trailing-return-type,  # Disable trailing return type check; prefer explicit return types.
   bugprone-*,readability-*
 
+# Warnings are not escalated to errors to keep build flexible.
 WarningsAsErrors: ''
-HeaderFilterRegex: 'src/.*'
+
+# Analyze files in src/ and include/.
+# Third-party files are excluded.
+HeaderFilterRegex: '^(src/(?!glad)|include/(?!glad|stb|utf8cpp)).*'
+
 FormatStyle: file
+
 CheckOptions:
   - key:             modernize-use-nullptr.NullMacros
     value:           'NULL'

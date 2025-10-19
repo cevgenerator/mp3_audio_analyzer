@@ -1,9 +1,10 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of Renderer class. Handles OpenGL state, shape, line and font
-// texture geometry, as well as drawing. Is used and owned by Visualizer to
-// render a real-time visualization of the analysis data.
+// Declaration of Renderer class.
+//
+// Handles OpenGL state management, geometry creation (shapes, lines, font
+// texture), and rendering for real-time visualization of audio analysis data.
 
 #pragma once
 
@@ -25,27 +26,34 @@ constexpr size_t kNumBands = 32;
 
 class Renderer {
  public:
-  Renderer();
+  Renderer() = default;
   ~Renderer();
 
-  bool Initialize(long sample_rate,
-                  const std::shared_ptr<AnalysisData>& analysis_data);
+  // Non-copyable for safety, non-movable for simplicity.
+  Renderer(const Renderer&) = delete;
+  Renderer& operator=(const Renderer&) = delete;
+  Renderer(Renderer&&) = delete;
+  Renderer& operator=(Renderer&&) = delete;
+
+  // Initialize() must be called right after the constructor.
+  [[nodiscard]] bool Initialize(
+      long sample_rate, const std::shared_ptr<AnalysisData>& analysis_data);
   void Render();
 
  private:
-  static bool InitializeOpenglState();
+  [[nodiscard]] static bool InitializeOpenglState();
   void Update();
 
   // Bin to band mapping
   void AggregateBins();
   void SmoothBandMagnitudes();
-  bool BuildBinToBandMapping();
+  [[nodiscard]] bool BuildBinToBandMapping();
 
   // Geometry
-  bool CreateBarGeometry();
-  bool CreateDiamondGeometry();
-  bool CreateLineGeometry();
-  bool CreateLabelGeometry();
+  [[nodiscard]] bool CreateBarGeometry();
+  [[nodiscard]] bool CreateDiamondGeometry();
+  [[nodiscard]] bool CreateLineGeometry();
+  [[nodiscard]] bool CreateLabelGeometry();
 
   // Rendering
   void RenderBar(size_t index, float magnitude, bool is_left) const;

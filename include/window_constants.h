@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Shared constants for audio visualization.
+// Constants related to window dimensions and pixel scaling,
+// shared across the audio visualization system.
 
 #pragma once
 

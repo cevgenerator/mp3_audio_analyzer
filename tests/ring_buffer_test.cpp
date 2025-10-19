@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Simple test for RingBuffer<T> to verify SPSC behavior.
 // Pushes 1000 integers from one thread, pops from another,
@@ -7,18 +7,30 @@
 
 #include "ring_buffer.h"
 
+#include <cstddef>
 #include <iostream>
 #include <thread>
+
+namespace {
+
+constexpr size_t kBufferSize = 1024;
+constexpr int kNumberOfIntegers = 1000;
+
+}  // namespace
 
 int main() {
   bool success = true;
 
   RingBuffer<int> buffer;
-  buffer.Initialize(1024);
+
+  if (!buffer.Initialize(kBufferSize)) {
+    std::cerr << "Failed to initialize buffer\n";
+    return 1;
+  }
 
   // Pass a lambda function to the producer thread.
   std::thread producer([&]() {
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < kNumberOfIntegers; ++i) {
       // Try to push i into the buffer until success.
       while (!buffer.Push(&i, 1)) {
       }
@@ -28,7 +40,7 @@ int main() {
   // Pass a lambda function to the consumer thread.
   std::thread consumer([&]() {
     int value;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < kNumberOfIntegers; ++i) {
       // Try to copy 1 value from buffer into `value` until success.
       while (!buffer.Pop(&value, 1)) {
       }

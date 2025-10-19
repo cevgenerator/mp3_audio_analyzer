@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of AnalysisThread class.
+//
+// Runs a background thread that performs real-time audio analysis using FFTW.
 
 #include "analysis_thread.h"
 
@@ -68,7 +70,7 @@ void AnalysisThread::CalculateRms() {
   float rms_left = 0.0F;
   float rms_right = 0.0F;
 
-  for (size_t i = 0; i < analysis::kFftSize; i++) {
+  for (size_t i = 0; i < analysis::kFftSize; ++i) {
     rms_left += fft_.input_left()[i] * fft_.input_left()[i];
     rms_right += fft_.input_right()[i] * fft_.input_right()[i];
   }
@@ -155,7 +157,7 @@ void AnalysisThread::Run() {
     }
 
     // Split the interleaved audio into two channels.
-    for (size_t i = 0; i < kFrameCount; i++) {
+    for (size_t i = 0; i < kFrameCount; ++i) {
       fft_.input_left()[i] = interleaved_[2 * i];  // Copy each left sample.
       fft_.input_right()[i] =
           interleaved_[(2 * i) + 1];  // Copy each right sample.

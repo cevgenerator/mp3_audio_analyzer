@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of AudioPipeline class.
+//
+// Contains the threaded audio loop that decodes MP3 data, writes to the audio
+// output, and pushes PCM data to the analysis thread.
 
 #include "audio_pipeline.h"
 
 #include <cstddef>
-
-#include "error_handling.h"
 
 AudioPipeline::AudioPipeline(Decoder& decoder, AudioOutput& audio_output,
                              AnalysisThread& analysis_thread)
@@ -39,12 +40,17 @@ void AudioPipeline::Stop() {
 void AudioPipeline::Run() {
   size_t bytes_read;
 
-  // This loop runs until the MP3 is fully decoded. The buffer contains
-  // bytes_read bytes of PCM data.
+  // Audio processing loop (runs on its own thread via AudioPipeline).
+  // Continuously reads decoded PCM frames, pushes them to the analysis thread,
+  // and writes them to the audio output stream.
+  //
+  // Runs until the MP3 is fully decoded or an error occurs.
   while (running_ && decoder_.Read(bytes_read)) {
+    // The buffer contains bytes_read bytes of PCM data.
     size_t frames = bytes_read / decoder_.frame_size();
 
-    // Copy buffer to analysis thread.
+    // Push all interleaved samples (L+R) to the analysis buffer.
+    // frames * 2 = total number of float samples (for stereo audio).
     if (!analysis_thread_.buffer().Push(decoder_.buffer_data(), frames * 2)) {
       break;
     }
@@ -53,11 +59,6 @@ void AudioPipeline::Run() {
     if (!audio_output_.WriteStream(decoder_.buffer_data(), frames)) {
       break;
     }
-  }
-
-  // Check the reason the loop exited.
-  if (decoder_.mpg123_error() != MPG123_DONE) {
-    Mpg123Succeeded("Decoding", decoder_.mpg123_error());
   }
 
   running_ = false;  // Signal visualizer.
