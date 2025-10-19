@@ -1,13 +1,14 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.4.2`
+**Version:** `v0.4.2`  
+**Technologies:** C++17, OpenGL, PortAudio, FFTW, mpg123, GLAD, GLFW
 
 A real-time MP3 audio analyzer with visualization using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/), and [FFTW](https://fftw.org/).  
 
 Plays and analyzes an MP3 file, extracts frequency spectrum and other audio metrics and visualizes the results.  
 
-It's multi-threaded, uses real-time DSP and shows a custom OpenGL visualization.
+It's multi-threaded, uses real-time DSP and shows a custom [OpenGL](https://opengl.org/) visualization.
 
 ---
 
@@ -36,12 +37,10 @@ This kind of system has applications in audio software (e.g. DAWs, VST plugins),
 ## Features
 
 - Real-time MP3 playback and audio analysis
+- Frequency spectrum analysis (L/R channels using FFT)
+- Calculates audio metrics: RMS (volume), stereo correlation, bandwidth
+- Real-time OpenGL visualization of audio
 - Multi-threaded architecture with decoupled decoding, analysis, and rendering
-- Frequency spectrum analysis for left and right channels using FFT (via `FFTW`)
-- Calculates audio metrics: RMS (volume), stereo correlation and bandwidth
-- Visualizes audio data in real time using OpenGL
-- MP3 decoding with `mpg123`, audio output via `PortAudio`
-- Rendering via GLFW and GLAD (OpenGL 4.1 compatible)
 
 ---
 
@@ -64,6 +63,14 @@ The `AnalysisThread` reads from this ring buffer, performs a Fast Fourier Transf
 These metrics are stored in a thread-safe `AnalysisData` structure, which is read by the `Visualizer`.
 
 The `Visualizer`, running on the main thread, accesses this shared data and renders four real-time visualizations using OpenGL.
+
+### Thread Safe Communication
+
+The two key components ensuring safe data sharing between threads in this project are the `RingBuffer` and `AnalysisData`.
+
+`RingBuffer` uses `std::atomic` operations with acquire-release memory ordering to provide a lock-free shared buffer, while preventing data races and torn data.
+
+`AnalysisData` uses `std::mutex` to make sure only one thread at a time can access its data members.
 
 ---
 
@@ -143,14 +150,26 @@ These tools are used during development to help maintain code quality and consis
 
 ## Project Structure
 
+> Below are some highlighted source files that represent key components of the system. See include/ and src/ for the full list.
+
 ```
 project-root/
 │
 ├── assets/
 ├── cmake/
 ├── include/
+│   ├── analysis_data.h         # Thread-safe data sharing
+│   ├── analysis_thread.h       # Real-time audio analysis
+│   ├── audio_pipeline.h        # Decoding and playback thread
+│   ├── renderer.h              # OpenGL visual rendering
+│   └── ring_buffer.h           # Lock-free ring buffer (SPSC)
 ├── shaders/
 ├── src/
+│   ├── analysis_data.cpp
+│   ├── analysis_thread.cpp
+│   ├── audio_pipeline.cpp
+│   ├── main.cpp                # Runs Visualizer loop
+│   └── renderer.cpp
 ├── tests/
 ├── third_party_licenses/
 ├── CHANGELOG.md
@@ -161,6 +180,24 @@ project-root/
 ├── .clang-tidy
 └── .gitignore
 ```
+
+---
+
+## Challenges & Solutions
+
+### Real-Time Thread Communication
+**Challenge:**  
+Passing audio data from decoder to analyzer without blocking or losing sync.
+
+**Solution:**  
+Implemented a lock-free single-producer, single-consumer (SPSC) ring buffer, allowing fast, thread-safe data transfer between AudioPipeline and AnalysisThread.
+
+### Audio/Visual Glitches
+**Challenge:**  
+Prevent stutters or tearing in both audio playback and visual rendering.
+
+**Solution:**  
+Avoided any heavy computation or blocking operations on the audio and main (visual) thread, by offloading analysis entirely.
 
 ---
 
@@ -205,7 +242,17 @@ Test passed.
 
 ---
 
-## License
+## What I Learned
+
+- Designing thread-safe, real-time systems in C++
+- Applying lock-free programming and atomic memory ordering
+- Using modern OpenGL for custom visualizations
+- Practicing RAII and memory-safe design throughout the codebase
+- Integrating third-party libraries (PortAudio, FFTW, mpg123) into a cohesive system
+
+---
+
+## License & Attribution
 
 This code is released under the GPL-2+ License.
 See LICENSE file for details.
@@ -240,5 +287,5 @@ This project uses a music excerpt from the track:
 **"Orbiting A Distant Planet" by Quantum Jazz**
 - Original source: [Free Music Archive](https://freemusicarchive.org/music/Quantum_Jazz/End_of_Line/07_-_Quantum_Jazz_-_Orbiting_A_Distant_Planet/)
 - License: [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
-- Changes made: The original track was excerpted (first ~1 minute), volume was adjusted, limitting was applied, silence was added at the beginning and a fade-out was added.
+- Changes made: The original track was excerpted (first ~1 minute), volume was adjusted, limiting was applied, silence was added at the beginning and a fade-out was added.
 - This adapted version is also licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
