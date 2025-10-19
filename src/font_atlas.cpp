@@ -17,6 +17,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
+FontAtlas::~FontAtlas() {
+  if (texture_ != 0) {
+    glDeleteTextures(1, &texture_);
+  }
+}
+
 // Loads the font texture from a PNG file into an OpenGL texture.
 //
 // OpenGL context must be current before calling this method.
