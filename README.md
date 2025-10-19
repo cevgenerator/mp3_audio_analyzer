@@ -1,7 +1,7 @@
 # MP3 Audio Analyzer
 
 **Language:** C++  
-**Version:** `v0.4.2`  
+**Version:** `v0.4.3`  
 **Technologies:** C++17, OpenGL, PortAudio, FFTW, mpg123, GLAD, GLFW
 
 A real-time MP3 audio analyzer with visualization using [mpg123](https://mpg123.de/), [PortAudio](https://portaudio.com/), and [FFTW](https://fftw.org/).  
