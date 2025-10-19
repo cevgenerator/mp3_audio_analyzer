@@ -1,8 +1,15 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of AnalysisData class.
-// This class contains the shared data between AnalysisThread and Visualizer.
+// Thread-safe container for audio analysis metrics.
+//
+// Stores real-time analysis results (RMS, stereo correlation, frequency
+// bandwidth, and FFT spectra for both channels). It is shared between
+// AnalysisThread (writer) and Visualizer (reader).
+//
+// Provides Set() and Get() methods for safe concurrent access using a mutex.
+//
+// Note: Not copyable or movable due to mutex ownership.
 
 #pragma once
 
@@ -11,6 +18,7 @@
 
 #include "analysis_constants.h"
 
+// Thread-safe class for sharing audio analysis data between threads.
 class AnalysisData {
  public:
   AnalysisData() = default;
@@ -22,10 +30,12 @@ class AnalysisData {
   AnalysisData(AnalysisData&&) = delete;
   AnalysisData& operator=(AnalysisData&&) = delete;
 
+  // Must be called from the analysis thread.
   void Set(float rms, float correlation, float bandwidth,
            const std::array<float, analysis::kFftBinCount>& spectrum_left,
            const std::array<float, analysis::kFftBinCount>& spectrum_right);
 
+  // Must be called from the thread reading the analysis data.
   void Get(float& rms, float& correlation, float& bandwidth,
            std::array<float, analysis::kFftBinCount>& spectrum_left,
            std::array<float, analysis::kFftBinCount>& spectrum_right) const;

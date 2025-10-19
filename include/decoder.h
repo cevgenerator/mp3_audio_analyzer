@@ -1,9 +1,17 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of Decoder and Mpg123HandleWrapper classes,
-// which provide a safe and easy interface for decoding MP3 files
-// using the mpg123 library.
+// Declarations of Decoder and Mpg123HandleWrapper classes.
+//
+// Decoder wraps the mpg123 library to handle MP3 file decoding,
+// including file I/O, format parsing, buffer management, and PCM decoding.
+//
+// Note: Decoder is NOT thread-safe. It must only be used from the AudioPipeline
+// thread after initialization. Temporary single-threaded access during
+// initialization is safe as long as no other threads are running.
+//
+// Mpg123HandleWrapper is a simple RAII wrapper for mpg123_handle* to ensure
+// correct allocation and cleanup.
 
 #pragma once
 

@@ -1,9 +1,15 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declarations for audio output functionality using the PortAudio library.
-// Includes RAII wrappers for system and stream management, and a high-level
-// AudioOutput interface that initializes, configures, and writes audio data.
+// Declarations for classes handling audio output functionality using the
+// PortAudio library.
+//
+// Includes RAII wrappers for system and stream management,
+// and a high-level AudioOutput interface that initializes, configures, and
+// writes audio data to the default system audio output.
+//
+// Note: AudioOutput is NOT thread-safe. It is designed to be used exclusively
+// from the AudioPipeline thread. Do not access it from other threads.
 
 #pragma once
 
@@ -70,7 +76,7 @@ class AudioStream {
 
 // AudioOutput is a high-level wrapper for audio playback using PortAudio.
 // It handles system initialization, stream configuration, starting, and writing
-// audio data.
+// audio data to the system audio output.
 class AudioOutput {
  public:
   AudioOutput();

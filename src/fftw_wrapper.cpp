@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of FftwWrapper class.
+//
+// This wrapper is intended to be used as part of a real-time audio analysis
+// pipeline where FFT is used for frequency analysis.
 
 #include "fftw_wrapper.h"
 
@@ -14,6 +17,7 @@ FftwWrapper::~FftwWrapper() {
   fftwf_free(output_right_);
 }
 
+// Allocates memory for input/output buffers and creates FFTW plans.
 bool FftwWrapper::Initialize(size_t fft_size) {
   fft_size_int = static_cast<int>(fft_size);
   input_left_ = (float*)fftwf_malloc(sizeof(float) * fft_size);

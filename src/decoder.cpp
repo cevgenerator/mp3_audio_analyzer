@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of the Decoder and Mpg123HandleWrapper classes.
+//
 // These handle MPG123 library interactions, error checking, and buffer
 // management.
 
@@ -49,10 +50,11 @@ bool Decoder::Initialize(const char* path) {
 }
 
 // Decodes the next chunk of audio data into the internal buffer.
-// Sets bytes_read to the number of PCM bytes written.
-// Reinterpret buffer_ as unsigned char* so mpg123_read() can write raw PCM
-// data. Assumes buffer_ is sized in bytes and stores float samples
-// (MPG123_ENC_FLOAT_32).
+//
+// - Sets bytes_read to the number of PCM bytes written.
+// - Reinterprets buffer_ as unsigned char* for mpg123_read() to write into.
+// - Assumes buffer_ is sized in bytes and stores float samples
+//   (MPG123_ENC_FLOAT_32).
 bool Decoder::Read(size_t& bytes_read) {
   mpg123_error_ =
       mpg123_read(handle_, reinterpret_cast<unsigned char*>(buffer_.data()),
@@ -112,7 +114,7 @@ bool Decoder::AllocateBuffer() {
   buffer_size_ =
       mpg123_outblock(handle_);  // Get recommended buffer size in bytes.
 
-  // Allocate float buffer: size in samples = bytes / sizeof(float)
+  // Allocate float buffer: size in samples = bytes / sizeof(float).
   buffer_.resize(buffer_size_ / sizeof(float));
 
   return Succeeded("Allocating buffer", (buffer_size_ == 0));

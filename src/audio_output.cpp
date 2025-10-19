@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of audio output classes using the PortAudio library.
+//
+// Covers system setup, stream management, and audio playback.
 
 #include "audio_output.h"
 

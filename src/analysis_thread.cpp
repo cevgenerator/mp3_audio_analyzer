@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Implementation of AnalysisThread class.
+//
+// Runs a background thread that performs real-time audio analysis using FFTW.
 
 #include "analysis_thread.h"
 

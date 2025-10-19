@@ -1,9 +1,10 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of FftwWrapper class. This class wraps the FFTW library for RAII
-// and handles FFT initialization, execution, and provides access to FFT
-// results.
+// Declaration of FftwWrapper class.
+//
+// This class wraps the FFTW library for RAII and handles FFT initialization,
+// execution, and provides access to FFT results.
 
 #pragma once
 
@@ -23,6 +24,8 @@ class FftwWrapper {
 
   // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(size_t fft_size);
+
+  // Executes the FFT operation on the input data.
   void Execute();
 
   [[nodiscard]] float* input_left();

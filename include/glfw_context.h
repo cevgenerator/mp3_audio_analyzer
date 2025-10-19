@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of GlfwContext class. This class is an RAII wrapper for GLFW.
-// Since GLFW is not thread-safe, all method calls must occur on the main
-// thread.
+// Declaration of GlfwContext class.
+//
+// This class is an RAII wrapper for GLFW. It manages the GLFW window and OpenGL
+// context. Since GLFW is not thread-safe, all method calls must occur on the
+// main thread.
 
 #pragma once
 

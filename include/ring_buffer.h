@@ -1,16 +1,15 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Lock-free, single-producer single-consumer (SPSC) ring buffer.
+// Lock-free single-producer, single-consumer (SPSC) ring buffer.
 //
-// This class implements a circular buffer using atomic operations,
-// suitable for audio or real-time data streaming applications.
-// It avoids locks by relying on relaxed memory ordering and a
-// fixed-capacity design. Wraparound behavior is handled efficiently
-// using a power-of-two buffer size.
+// Designed for low-latency real-time data transfer between threads,
+// using atomics with relaxed and acquire-release memory orderings.
+// Wraparound behavior is handled efficiently using a power-of-two buffer size.
 //
-// Designed for low-latency communication between a producer thread
-// (e.g. decoder) and a consumer thread (e.g. analyzer).
+// IMPORTANT: This class is NOT thread-safe for multiple producers or consumers.
+// Only one thread may call Push(), and only one thread may call Pop().
+// Violating this will cause undefined behavior.
 
 #pragma once
 
@@ -45,7 +44,9 @@ class RingBuffer {
 
   // Initialize() must be called right after the constructor.
   [[nodiscard]] bool Initialize(size_t capacity) {
-    // Must be a power of two and non-zero.
+    // Capacity must be a power of two and non-zero.
+    // Power-of-two sizing enables efficient wraparound through subtracting 1
+    // and using the  bitwise AND operator.
     if (capacity == 0 || (capacity & (capacity - 1)) != 0) {
       return false;
     }
@@ -65,7 +66,9 @@ class RingBuffer {
       return false;
     }
 
-    // Load head and tail atomically.
+    // Load head_ with relaxed: producer only reads its own updates.
+    // Load tail_ with acquire: prevents stale tail_ value and reordering before
+    // this load.
     size_t head = head_.load(std::memory_order_relaxed);
     size_t tail = tail_.load(std::memory_order_acquire);
 
@@ -77,7 +80,7 @@ class RingBuffer {
       return false;
     }
 
-    size_t index = head & (capacity_ - 1);  // Calculate write position.
+    size_t index = head & (capacity_ - 1);  // Calculate write index.
 
     // Determine how many items can be written before wraparound is needed.
     size_t first_copy_count = std::min(count, capacity_ - index);
@@ -90,9 +93,8 @@ class RingBuffer {
     std::copy_n(data + first_copy_count, count - first_copy_count,
                 buffer_.data());
 
-    // Update head_ atomically.
-    // `release` ensures the memory copy is visible to the consumer before it
-    // reads this new head value.
+    // Store head_ with release: ensures the memory copy is visible to the
+    // consumer before it reads this new head value.
     head_.store(head + count, std::memory_order_release);
 
     return true;
@@ -106,7 +108,9 @@ class RingBuffer {
       return false;
     }
 
-    // Load tail and head atomically.
+    // Load tail_ with relaxed: consumer only reads its own updates.
+    // Load head_ with acquire: ensures prior writes by the producer (e.g. to
+    // buffer_) are visible before this read.
     size_t tail = tail_.load(std::memory_order_relaxed);
     size_t head = head_.load(std::memory_order_acquire);
 
@@ -128,7 +132,9 @@ class RingBuffer {
     std::copy_n(buffer_.data(), count - first_copy_count,
                 dest + first_copy_count);
 
-    // Update tail_ atomically (release ensures memory copy is visible).
+    // Store tail_ with release: ensures all prior consumer operations
+    // (including reading from buffer_) happen-before a producer's acquire load
+    // of tail_.
     tail_.store(tail + count, std::memory_order_release);
 
     return true;
@@ -141,6 +147,8 @@ class RingBuffer {
   [[nodiscard]] size_t capacity() const { return capacity_; }
 
   [[nodiscard]] size_t Size() const {
+    // Use acquire to ensure this reflects the most recent state from both
+    // producer and consumer.
     size_t head = head_.load(std::memory_order_acquire);
     size_t tail = tail_.load(std::memory_order_acquire);
 

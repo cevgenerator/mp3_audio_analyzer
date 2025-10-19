@@ -1,5 +1,5 @@
 // Copyright (c) 2025 Kars Helderman
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Simple test for RingBuffer<T> to verify SPSC behavior.
 // Pushes 1000 integers from one thread, pops from another,

@@ -1,9 +1,10 @@
 // Copyright (c) 2025 Kars Helderman
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
-// Declaration of Renderer class. Handles OpenGL state, shape, line and font
-// texture geometry, as well as drawing. Is used and owned by Visualizer to
-// render a real-time visualization of the analysis data.
+// Declaration of Renderer class.
+//
+// Handles OpenGL state management, geometry creation (shapes, lines, font
+// texture), and rendering for real-time visualization of audio analysis data.
 
 #pragma once
 
